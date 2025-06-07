@@ -1,0 +1,58 @@
+node_modules
+
+# compiled output
+app/server/dist
+app/server/node_modules
+/app/server/build
+
+# Logs
+/app/server/logs
+/app/server/*.log
+/app/server/npm-debug.log*
+/app/server/pnpm-debug.log*
+/app/server/yarn-debug.log*
+/app/server/yarn-error.log*
+/app/server/lerna-debug.log*
+
+# OS
+/app/server/.DS_Store
+
+# Tests
+/app/server/coverage
+/app/server/.nyc_output
+
+# IDEs and editors
+/app/server/.idea
+/app/server.project
+/app/server.classpath
+/app/server.c9/
+/app/server*.launch
+/app/server.settings/
+/app/server*.sublime-workspace
+
+# IDE - VSCode
+/app/server/.vscode/*
+/app/server/!.vscode/settings.json
+/app/server/!.vscode/tasks.json
+/app/server/!.vscode/launch.json
+/app/server/!.vscode/extensions.json
+
+# dotenv environment variable files
+/app/server/.env
+/app/server/.env.development.local
+/app/server/.env.test.local
+/app/server/.env.production.local
+/app/server/.env.local
+
+# temp directory
+/app/server/.temp
+/app/server/.tmp
+
+# Runtime data
+/app/server/pids
+/app/server/*.pid
+/app/server/*.seed
+/app/server/*.pid.lock
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+/app/server/report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

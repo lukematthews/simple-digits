@@ -1,0 +1,11 @@
+# frontend/Dockerfile.frontend
+FROM node:22
+
+WORKDIR /app
+COPY app/client/package*.json ./
+RUN npm install
+COPY app/client .
+RUN npm run build
+RUN npm install -g serve
+
+CMD ["serve", "-s", "dist", "-l", "5173"]
