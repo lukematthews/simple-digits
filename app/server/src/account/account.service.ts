@@ -32,6 +32,7 @@ export class AccountService {
     const created = await this.accountRepo.save({
       name: account.name,
       balance: account.balance,
+      month: account.month
     });
     this.eventsGateway.broadcastEvent(EventSource.ACCOUNTS, {
       client: CLIENT,
@@ -60,5 +61,9 @@ export class AccountService {
       data: updated,
     });
     return updated;
+  }
+
+  findByMonthId(monthId: number) {
+    return this.accountRepo.find({ where: { month: { id: monthId } } });
   }
 }

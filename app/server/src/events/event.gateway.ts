@@ -16,6 +16,7 @@ export type WebSocketEvent = {
   source: EventSource;
   client: string;
   type: Types;
+  options?: any;
   data: any;
 };
 

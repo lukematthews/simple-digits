@@ -9,7 +9,6 @@ import { TransactionModule } from '@/transaction/transaction.module';
     forwardRef(() => AccountModule),
     forwardRef(() => MonthModule),
     forwardRef(() => TransactionModule),
-    forwardRef(() => MonthModule),
   ],
   providers: [EventGateway],
   exports: [EventGateway],

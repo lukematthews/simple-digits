@@ -31,9 +31,14 @@ export class MonthController {
     return this.monthService.getMonthAtPosition(position);
   }
   
+  @Get('/balances')
+  getMonthBalances() {
+    return this.monthService.calculateBalances();
+  }
+
   @Post()
   create(@Body() month: CreateMonthDto) {
-    return this.monthService.create(month);
+    return this.monthService.create(month, {copyAccounts: true});
   }
 
   @Put(':id')

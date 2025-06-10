@@ -7,7 +7,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { Month } from '../month/month.entity';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { CLIENT, EventSource, Types } from '@/Constants';
-import { MonthService } from '@/month/month.service';
+import { TransactionDto } from './dto/transaction.dto.';
 
 @Injectable()
 export class TransactionService {
@@ -36,7 +36,7 @@ export class TransactionService {
         transaction.description = messageTransaction.description;
       }
       if (messageTransaction.amount !== transaction.amount) {
-        transaction.amount = messageTransaction.amount
+        transaction.amount = messageTransaction.amount;
       }
       if (messageTransaction.paid !== transaction.paid) {
         transaction.paid = messageTransaction.paid;
@@ -59,6 +59,29 @@ export class TransactionService {
 
   async findAll() {
     return await this.transactionRepo.find();
+  }
+
+  async createTransactions(transactions: CreateTransactionDto[]) {
+    const transactionDtos: TransactionDto[] = [];
+    for (const t of transactions) {
+      const month = await this.monthRepo.findOne({ where: { id: t.month } });
+      const newTransaction = await this.transactionRepo.save({
+        description: t.description,
+        amount: t.amount,
+        date: t.date,
+        paid: t.paid,
+        month: month,
+      });
+      transactionDtos.push({
+        id: newTransaction.id,
+        month: newTransaction.month.id,
+        description: newTransaction.description,
+        date: newTransaction.date,
+        amount: newTransaction.amount,
+        paid: newTransaction.paid,
+      });
+    }
+    return transactionDtos;
   }
 
   async addTransaction(month: Month, transaction: CreateTransactionDto) {
@@ -97,11 +120,11 @@ export class TransactionService {
   }
 
   async delete(id: number) {
-    const result = await this.transactionRepo.delete(id);
+    await this.transactionRepo.delete(id);
     this.eventsGateway.broadcastEvent(EventSource.TRANSACTION, {
       client: CLIENT,
       type: Types.DELETE,
-      data: result.affected,
+      data: id,
     });
   }
 }

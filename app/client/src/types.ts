@@ -1,18 +1,9 @@
 // src/types.ts
 
-export interface Transaction {
-  id: number | null;
-  description: string;
-  date: string;
-  amount: number;
-  paid: boolean;
-  balance: number | null;
-}
-
-export interface Account {
+export interface Budget {
   id: number;
   name: string;
-  balance: number | null | undefined;
+  months: Month[];
 }
 
 export interface Month {
@@ -25,6 +16,23 @@ export interface Month {
   accounts: Account[];
   position: number;
 }
+
+export interface Transaction {
+  id: number | null;
+  description: string;
+  date: string;
+  amount: number;
+  paid: boolean;
+  balance: number | null;
+  month: Month;
+}
+
+export interface Account {
+  id: number;
+  name: string;
+  balance: number | null | undefined;
+}
+
 
 export interface MonthControlProps {
   months: Month[];

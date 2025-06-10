@@ -8,20 +8,10 @@ export class CreateMonthDto {
   @IsString()
   name: string;
 
-  @IsNumber()
-  @IsOptional()
-  balance?: number;
-
   @IsBoolean()
   started: boolean;
 
   position: number;
 
   accounts: AccountDto[];
-
-  @IsOptional()
-  previousMonth?: number;
-
-  @IsOptional()
-  nextMonth?: number;
 }

@@ -10,6 +10,8 @@ import { MonthDto } from './dto/month.dto';
 import { TransactionService } from '@/transaction/transaction.service';
 import { CreateTransactionDto } from '@/transaction/dto/create-transaction.dto';
 import { CLIENT, EventSource, Types } from '@/Constants';
+import { AccountService } from '@/account/account.service';
+import { Transaction } from '@/transaction/transaction.entity';
 
 interface MonthEvent {
   client: 'api';
@@ -23,6 +25,8 @@ export class MonthService {
   constructor(
     @InjectRepository(Month)
     private monthRepo: Repository<Month>,
+    @Inject(forwardRef(() => AccountService))
+    private accountService: AccountService,
     @Inject()
     private transactionService: TransactionService,
     @Inject(forwardRef(() => EventGateway))
@@ -31,7 +35,7 @@ export class MonthService {
 
   async handleEvent(event: WebSocketEvent) {
     if (event.type === Types.CREATE) {
-      await this.create(event.data);
+      await this.create(event.data, event.options);
     } else if (event.type === Types.UPDATE) {
       await this.update(event.data.id, event.data);
     } else if (event.type === Types.DELETE) {
@@ -41,7 +45,7 @@ export class MonthService {
 
   async findAll(): Promise<MonthDto[]> {
     const months = await this.monthRepo.find({
-      relations: ['transactions', 'nextMonth', 'previousMonth', 'accounts'],
+      relations: ['transactions', 'accounts'],
       order: { position: 'ASC' },
     });
 
@@ -59,34 +63,6 @@ export class MonthService {
     return month.accounts;
   }
 
-  async create(month: CreateMonthDto): Promise<MonthDto> {
-    const previousMonth = month.previousMonth
-      ? await this.monthRepo.findOneBy({
-          id: month.previousMonth,
-        })
-      : undefined;
-    const nextMonth = month.nextMonth
-      ? await this.monthRepo.findOneBy({
-          id: month.nextMonth,
-        })
-      : undefined;
-    const created = await this.monthRepo.save({
-      name: month.name,
-      balance: month.balance,
-      started: month.started,
-      previousMonth: previousMonth,
-      nextMonth: nextMonth,
-    });
-    this.eventsGateway.broadcast({
-      type: Types.CREATE,
-      data: created,
-    } as MonthEvent);
-
-    return plainToInstance(MonthDto, created, {
-      excludeExtraneousValues: true,
-    });
-  }
-
   async delete(id: number) {
     const result = await this.monthRepo.delete(id);
     this.eventsGateway.broadcast({
@@ -97,20 +73,8 @@ export class MonthService {
   }
 
   async update(id: number, month: UpdateMonthDto): Promise<MonthDto> {
-    const monthToUpdate: any = {};
+    const monthToUpdate: any = { ...month, id };
     monthToUpdate.id = id;
-    if (month.name) {
-      monthToUpdate.name = month.name;
-    }
-    if (month.started) {
-      monthToUpdate.started = month.started;
-    }
-    if (month.accounts) {
-      monthToUpdate.accounts = month.accounts;
-    }
-    if (month.position) {
-      monthToUpdate.position = month.position;
-    }
     await this.monthRepo.save(monthToUpdate);
     const updated = await this.monthRepo.findOne({
       where: { id },
@@ -151,5 +115,184 @@ export class MonthService {
       return await this.monthRepo.save(month);
     }
     return null;
+  }
+
+  async create(
+    monthData: Partial<CreateMonthDto> & { id?: number },
+    options: { copyAccounts: boolean },
+  ): Promise<Month> {
+    const budgetId = 1;
+
+    const targetPosition = monthData.position;
+
+    const queryRunner = this.monthRepo.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const budgetRef = { id: budgetId };
+
+      let existingMonth: Month | undefined;
+      if (monthData.id != null) {
+        // Reordering existing month
+        existingMonth = await queryRunner.manager.findOne(Month, {
+          where: { id: monthData.id, budget: budgetRef },
+        });
+
+        if (!existingMonth) {
+          throw new Error(`Month with id ${monthData.id} not found.`);
+        }
+
+        const currentPosition = existingMonth.position ?? 0;
+
+        if (targetPosition === currentPosition) {
+          await queryRunner.rollbackTransaction();
+          return existingMonth;
+        }
+
+        if (targetPosition < currentPosition) {
+          // Moving up: shift down months between target and current
+          await queryRunner.manager
+            .createQueryBuilder()
+            .update(Month)
+            .set({ position: () => `"position" + 1` })
+            .where('"budgetId" = :budgetId', { budgetId })
+            .andWhere('"position" >= :target AND "position" < :current', {
+              target: targetPosition,
+              current: currentPosition,
+            })
+            .execute();
+        } else {
+          // Moving down: shift up months between current and target
+          await queryRunner.manager
+            .createQueryBuilder()
+            .update(Month)
+            .set({ position: () => `"position" - 1` })
+            .where('"budgetId" = :budgetId', { budgetId })
+            .andWhere('"position" <= :target AND "position" > :current', {
+              target: targetPosition,
+              current: currentPosition,
+            })
+            .execute();
+        }
+
+        existingMonth.position = targetPosition;
+        const updatedMonth = await queryRunner.manager.save(existingMonth);
+
+        await queryRunner.commitTransaction();
+        this.eventsGateway.broadcast({
+          client: CLIENT,
+          type: Types.UPDATE,
+          data: updatedMonth,
+        } as MonthEvent);
+
+        return updatedMonth;
+      } else {
+        // Inserting new month
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(Month)
+          .set({ position: () => `"position" + 1` })
+          .where('"budgetId" = :budgetId', { budgetId })
+          .andWhere('"position" >= :position', { position: targetPosition })
+          .execute();
+
+        const newMonth = this.monthRepo.create({
+          ...monthData,
+          budget: budgetRef,
+          position: targetPosition,
+        });
+
+        const saved = await queryRunner.manager.save(newMonth);
+
+        await queryRunner.commitTransaction();
+
+        // create accounts.
+        if (options.copyAccounts && saved.position > 1) {
+          const previousMonth = await this.monthRepo.findOne({
+            where: { position: saved.position - 1 },
+          });
+          const previousAccounts = await this.accountService.findByMonthId(
+            previousMonth.id,
+          );
+          await Promise.all(
+            previousAccounts.map((account) =>
+              this.accountService.create({ ...account, month: saved }),
+            ),
+          );
+        }
+        this.eventsGateway.broadcast({
+          client: CLIENT,
+          type: Types.CREATE,
+          data: saved,
+        } as MonthEvent);
+
+        return saved;
+      }
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async calculateBalances() {
+    const months = await this.monthRepo.find({ order: { position: 'ASC' } });
+    const balances: {
+      month: Month;
+      startingBalance: number;
+      closingBalance: number;
+    }[] = months.map((month) => {
+      return { month: month, startingBalance: 0, closingBalance: 0 };
+    });
+
+    balances.forEach((item, index) => {
+      if (item.month.started === true) {
+        this.calculateBalancesForStartedMonth(item);
+      } else {
+        this.calculateBalancesForNonStartedMonth(item, balances, index);
+      }
+    });
+    return balances;
+  }
+
+  private calculateBalancesForStartedMonth(item: {
+    month: Month;
+    startingBalance: number;
+    closingBalance: number;
+  }) {
+    const startingBalance = item.month.accounts.reduce(
+      (sum, acc) => sum + +acc.balance,
+      0,
+    );
+    item.startingBalance = startingBalance;
+    item.closingBalance =
+      startingBalance +
+      item.month.transactions
+        .filter((t) => t.paid === false)
+        .reduce((sum, trxn) => sum + trxn.amount, 0);
+  }
+
+  private calculateBalancesForNonStartedMonth(
+    item: {
+      month: Month;
+      startingBalance: number;
+      closingBalance: number;
+    },
+    balances: {
+      month: Month;
+      startingBalance: number;
+      closingBalance: number;
+    }[],
+    index: number,
+  ) {
+    const startingBalance = balances[index-1].closingBalance;
+    item.startingBalance = startingBalance;
+    item.closingBalance =
+      startingBalance +
+      item.month.transactions
+        .filter((t) => t.paid === false)
+        .reduce((sum, trxn) => sum + trxn.amount, 0);
   }
 }

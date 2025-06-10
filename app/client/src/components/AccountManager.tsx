@@ -54,12 +54,12 @@ export default function AccountManager({accounts}: Props) {
     socket.emit("account", { client: "frontend", type: "create", data: newAccount });
   };
 
-  const deleteAccount = (id: number) => {
-    const deleted = accounts.find((a) => a.id === +id);
-    if (!deleted) return;
-    setAccounts((prev) => prev.filter((a) => a.id !== +id));
-    socket.emit("account", { client: "frontend", type: "delete", data: deleted });
-  };
+  // const deleteAccount = (id: number) => {
+  //   const deleted = accounts.find((a) => a.id === +id);
+  //   if (!deleted) return;
+  //   setAccounts((prev) => prev.filter((a) => a.id !== +id));
+  //   socket.emit("account", { client: "frontend", type: "delete", data: deleted });
+  // };
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto">
@@ -73,9 +73,9 @@ export default function AccountManager({accounts}: Props) {
               updateAccount(acc.id, "balance", value);
             }}
           ></CurrencyInput>
-          <button onClick={() => deleteAccount(acc.id)} className="text-red-500 hover:underline">
+          {/* <button onClick={() => deleteAccount(acc.id)} className="text-red-500 hover:underline">
             Delete
-          </button>
+          </button> */}
         </div>
       ))}
 

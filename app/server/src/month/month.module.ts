@@ -5,11 +5,10 @@ import { MonthService } from './month.service';
 import { MonthController } from './month.controller';
 import { Month } from './month.entity';
 import { TransactionModule } from '@/transaction/transaction.module';
-
-console.log('MonthService:', MonthService);
+import { AccountModule } from '@/account/account.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Month]), TransactionModule, forwardRef(() => EventsModule)],
+  imports: [TypeOrmModule.forFeature([Month]), TransactionModule, forwardRef(() => AccountModule), forwardRef(() => EventsModule)],
   providers: [MonthService],
   controllers: [MonthController],
   exports: [MonthService],

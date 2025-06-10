@@ -4,10 +4,8 @@ import { Transaction } from '@/transaction/transaction.entity';
 import {
   Column,
   Entity,
-  JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -23,28 +21,6 @@ export class Month {
 
   @Column()
   name: string;
-
-  @Column('decimal', {
-    precision: 12,
-    scale: 2,
-    nullable: true,
-    transformer: {
-      to: (value: number) => value,
-      from: (value: string): number => parseFloat(value),
-    },
-  })
-  balance?: number;
-
-  @Column('decimal', {
-    precision: 12,
-    scale: 2,
-    nullable: true,
-    transformer: {
-      to: (value: number) => value,
-      from: (value: string): number => parseFloat(value),
-    },
-  })
-  closingBalance?: number;
 
   @Column()
   started: boolean;
@@ -63,12 +39,4 @@ export class Month {
 
   @Column({ nullable: true })
   position: number;
-
-  @OneToOne(() => Month, { nullable: true })
-  @JoinColumn()
-  previousMonth?: Month;
-
-  @OneToOne(() => Month, { nullable: true })
-  @JoinColumn()
-  nextMonth?: Month;
 }

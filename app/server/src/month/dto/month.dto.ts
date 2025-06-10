@@ -1,7 +1,6 @@
-import { Account } from '@/account/account.entity';
 import { AccountDto } from '@/account/dto/account.dto';
 import { TransactionDto } from '@/transaction/dto/transaction.dto.';
-import { Expose, plainToInstance, Transform, Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 
 class RelatedMonthDto {
   @Expose()
@@ -19,9 +18,6 @@ export class MonthDto {
   name: string;
 
   @Expose()
-  balance: number;
-
-  @Expose()
   started: boolean;
 
   @Expose()
@@ -34,12 +30,4 @@ export class MonthDto {
 
   @Expose()
   position: number;
-
-  @Expose()
-  @Type(() => RelatedMonthDto)
-  previousMonth: RelatedMonthDto | null;
-
-  @Expose()
-  @Type(() => RelatedMonthDto)
-  nextMonth: RelatedMonthDto | null;
 }

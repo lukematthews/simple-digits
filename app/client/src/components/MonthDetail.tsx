@@ -2,9 +2,9 @@ import { Month } from "@/types";
 import { Checkbox } from "./ui/checkbox";
 import { useEffect, useState } from "react";
 import { Label } from "./ui/label";
-import { setBalances } from "@/lib/utils";
 import CurrencyInput from "react-currency-input-field";
 import { socket } from "@/lib/socket";
+import { setBalances } from "@/lib/transactionUtils";
 
 type Props = {
   month: Month;
@@ -35,7 +35,7 @@ export default function MonthDetail({ month }: Props) {
     })();
 
     socket.on("month", (message) => {
-      console.log(`received month message ${JSON.stringify(message)}`);
+      console.log(`MonthDetail: received month message ${JSON.stringify(message)}`);
       if (message.client !== "api") {
         return;
       }
@@ -60,18 +60,29 @@ export default function MonthDetail({ month }: Props) {
         })();
       }
     });
+
+    socket.on("tramsaction", (message) => {
+      console.log(`MonthDetail: received transaction message ${JSON.stringify(message)}`);
+      if (message.client !== "api") {
+        return;
+      }
+
+      // a transaction update has happened. This means that the starting and closing balances need to be recalculated.
+    });
   }, [monthStarted, month, month.accounts, month.transactions]);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">{month.name}</h1>
       <div className="flex">
         <div className="flex-grow">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold">{month.name}</h1>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
             <Checkbox checked={monthStarted} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
             <Label>Started</Label>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-1">
             <CurrencyInput
               id="startingBalance"
               name="startingBalance"
@@ -84,7 +95,7 @@ export default function MonthDetail({ month }: Props) {
             ></CurrencyInput>
             <Label>Starting Balance</Label>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-1">
             <CurrencyInput
               id="startingBalance"
               name="startingBalance"
