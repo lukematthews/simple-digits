@@ -1,71 +1,52 @@
+import { SubscribeMessage } from '@nestjs/websockets';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Transaction } from './transaction.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EventGateway, WebSocketEvent } from '@/events/event.gateway';
 import { Repository } from 'typeorm';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { Month } from '../month/month.entity';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { CLIENT, EventSource, Types } from '@/Constants';
 import { TransactionDto } from './dto/transaction.dto.';
+import { BaseEntityService } from '@/common/base-entity.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { WsEventBusService } from '@/events/ws-event-bus.service';
+import { Types } from '@/Constants';
 
 @Injectable()
-export class TransactionService {
+export class TransactionService extends BaseEntityService<Transaction> {
   constructor(
     @InjectRepository(Transaction)
     private transactionRepo: Repository<Transaction>,
     @InjectRepository(Month)
     private monthRepo: Repository<Month>,
-    @Inject(forwardRef(() => EventGateway))
-    private readonly eventsGateway: EventGateway,
-  ) {}
-
-  async handleEvent(event: WebSocketEvent) {
-    if (event.type === Types.CREATE) {
-      const month = await this.monthRepo.findOneBy({ id: event.data.month });
-      // console.log(`month: ${JSON.stringify(month)}`);
-      const createdTransaction = await this.addTransaction(month, event.data);
-      console.log(`created transaction ${JSON.stringify(createdTransaction)}`);
-    } else if (event.type === Types.UPDATE) {
-      console.log(`update transaction ${JSON.stringify(event)}`);
-      const transaction = await this.transactionRepo.findOneBy({
-        id: event.data.id,
-      });
-      const messageTransaction: Transaction = event.data;
-      if (messageTransaction.description !== transaction.description) {
-        transaction.description = messageTransaction.description;
-      }
-      if (messageTransaction.amount !== transaction.amount) {
-        transaction.amount = messageTransaction.amount;
-      }
-      if (messageTransaction.paid !== transaction.paid) {
-        transaction.paid = messageTransaction.paid;
-      }
-      if (messageTransaction.date !== transaction.date) {
-        transaction.date = messageTransaction.date;
-      }
-
-      const updatedTransaction = await this.transactionRepo.save(transaction);
-      this.eventsGateway.broadcastEvent(EventSource.TRANSACTION, {
-        client: CLIENT,
-        type: Types.UPDATE,
-        data: updatedTransaction,
-      });
-    } else if (event.type === Types.DELETE) {
-      console.log(`delete transaction: ${JSON.stringify(event)}`);
-      this.delete(event.data);
-    }
+    eventEmitter: EventEmitter2,
+    bus: WsEventBusService,
+  ) {
+    super(transactionRepo, eventEmitter, 'transaction', bus);
   }
 
-  async findAll() {
-    return await this.transactionRepo.find();
+  onModuleInit() {
+    this.bus.subscribe('transaction', this.handleTransactionMessage.bind(this));
+  }
+
+  handleTransactionMessage(message: any) {
+    const handler = async (payload: {operation: "create" | "update" | "delete", data: Partial<Transaction>}) => {
+      console.log('handled transaction message in TransactionService');
+      if (payload.operation === Types.CREATE) {
+        await this.create('api', payload.data);
+      } else if (payload.operation === Types.UPDATE) {
+        await this.update('api', payload.data.id, payload.data);
+      } else if (payload.operation === Types.DELETE) {
+        this.delete('api', payload.data.id);
+      }
+    };
+    handler(message);
   }
 
   async createTransactions(transactions: CreateTransactionDto[]) {
     const transactionDtos: TransactionDto[] = [];
     for (const t of transactions) {
       const month = await this.monthRepo.findOne({ where: { id: t.month } });
-      const newTransaction = await this.transactionRepo.save({
+      const newTransaction = await this.transactionRepo.save({ 
         description: t.description,
         amount: t.amount,
         date: t.date,
@@ -74,7 +55,7 @@ export class TransactionService {
       });
       transactionDtos.push({
         id: newTransaction.id,
-        month: newTransaction.month.id,
+        monthId: newTransaction.month.id,
         description: newTransaction.description,
         date: newTransaction.date,
         amount: newTransaction.amount,
@@ -92,39 +73,11 @@ export class TransactionService {
       paid: transaction.paid,
       month: month,
     });
-    this.eventsGateway.broadcastEvent(EventSource.TRANSACTION, {
-      client: CLIENT,
-      type: Types.CREATE,
-      data: created,
-    });
+    // this.eventsGateway.broadcastEvent(EventSource.TRANSACTION, {
+    //   client: CLIENT,
+    //   type: Types.CREATE,
+    //   data: created,
+    // });
     return created;
-  }
-
-  async update(month: Month, transaction: UpdateTransactionDto) {
-    const created = await this.transactionRepo.update(
-      { id: transaction.id },
-      {
-        amount: transaction.amount,
-        date: transaction.date,
-        description: transaction.description,
-        paid: transaction.paid,
-        month: month,
-      },
-    );
-    this.eventsGateway.broadcastEvent(EventSource.TRANSACTION, {
-      client: CLIENT,
-      type: Types.UPDATE,
-      data: created,
-    });
-    return created;
-  }
-
-  async delete(id: number) {
-    await this.transactionRepo.delete(id);
-    this.eventsGateway.broadcastEvent(EventSource.TRANSACTION, {
-      client: CLIENT,
-      type: Types.DELETE,
-      data: id,
-    });
   }
 }

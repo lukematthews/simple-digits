@@ -33,7 +33,6 @@ export interface Account {
   balance: number | null | undefined;
 }
 
-
 export interface MonthControlProps {
   months: Month[];
   setMonths: React.Dispatch<React.SetStateAction<Month[]>>;
@@ -47,3 +46,11 @@ export interface TransactionGridProps {
   months: Month[];
   setMonths: React.Dispatch<React.SetStateAction<Month[]>>;
 }
+
+export type WsEvent<T> = {
+  source: "api";
+  entity: string;
+  operation: "create" | "update" | "delete";
+  id: string | number;
+  payload: T;
+};

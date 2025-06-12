@@ -88,13 +88,6 @@ export default function BudgetApp() {
           {months.map((month) => (
             <TabsTrigger key={month.id} value={month.id} className="relative group">
               {month.name}
-              <Trash2
-                className="absolute top-0 right-0 w-4 h-4 text-red-500 opacity-0 group-hover:opacity-100 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteMonth(month.id);
-                }}
-              />
             </TabsTrigger>
           ))}
           <Button variant="outline" onClick={() => setShowAddModal(true)}>

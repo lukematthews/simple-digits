@@ -13,16 +13,16 @@ export class AccountController {
 
   @Post()
   create(@Body() account: Partial<Account>) {
-    return this.accountService.create(account);
+    return this.accountService.create('api', account);
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() body: Partial<Account>) {
-    return this.accountService.update(Number(id), body);
+    return this.accountService.update('api', Number(id), body);
   }
 
   @Delete(':id')
   delete(@Param('id') id: string) {
-    return this.accountService.delete(Number(id));
+    return this.accountService.delete('api', Number(id));
   }
 }

@@ -1,69 +1,42 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Account } from './account.entity';
-import { CLIENT, EventSource, Types } from '@/Constants';
-import { EventGateway, WebSocketEvent } from '@/events/event.gateway';
+import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BaseEntityService } from '../common/base-entity.service';
+import { WsEventBusService } from '@/events/ws-event-bus.service';
+import { Types } from '@/Constants';
 
 @Injectable()
-export class AccountService {
+export class AccountService extends BaseEntityService<Account> {
   constructor(
     @InjectRepository(Account)
-    private accountRepo: Repository<Account>,
-    @Inject(forwardRef(() => EventGateway))
-    private readonly eventsGateway: EventGateway,
-  ) {}
-
-  async handleEvent(event: WebSocketEvent) {
-    if (event.type === Types.CREATE) {
-      await this.create(event.data);
-    } else if (event.type === Types.UPDATE) {
-      await this.update(event.data.id, event.data);
-    } else if (event.type === Types.DELETE) {
-      await this.delete(event.data);
-    }
+    repo: Repository<Account>,
+    eventEmitter: EventEmitter2,
+    bus: WsEventBusService
+  ) {
+    super(repo, eventEmitter, 'account', bus);
   }
 
-  async findAll() {
-    return this.accountRepo.find();
+  onModuleInit() {
+    this.bus.subscribe('account', this.handleAccountMessage.bind(this));
   }
 
-  async create(account: Partial<Account>) {
-    const created = await this.accountRepo.save({
-      name: account.name,
-      balance: account.balance,
-      month: account.month
-    });
-    this.eventsGateway.broadcastEvent(EventSource.ACCOUNTS, {
-      client: CLIENT,
-      type: Types.CREATE,
-      data: created,
-    });
-    return created;
+  handleAccountMessage(message: any) {
+    const handler = async (payload: {operation: "create" | "update" | "delete", data: Partial<Account>}) => {
+      console.log('handled transaction message in TransactionService');
+      if (payload.operation === Types.CREATE) {
+        await this.create('api', payload.data);
+      } else if (payload.operation === Types.UPDATE) {
+        await this.update('api', payload.data.id, payload.data);
+      } else if (payload.operation === Types.DELETE) {
+        this.delete('api', payload.data.id);
+      }
+    };
+    handler(message);
   }
 
-  async delete(id: number) {
-    const result = await this.accountRepo.delete(id);
-    this.eventsGateway.broadcastEvent(EventSource.ACCOUNTS, {
-      client: CLIENT,
-      type: Types.DELETE,
-      data: id,
-    });
-    return result;
-  }
-
-  async update(id: number, data: Partial<Account>) {
-    await this.accountRepo.update({ id: id }, data);
-    const updated = await this.accountRepo.findOneBy({ id });
-    this.eventsGateway.broadcastEvent(EventSource.ACCOUNTS, {
-      client: CLIENT,
-      type: Types.UPDATE,
-      data: updated,
-    });
-    return updated;
-  }
-
-  findByMonthId(monthId: number) {
-    return this.accountRepo.find({ where: { month: { id: monthId } } });
+  async findByMonthId(id: number) {
+    return await this.repo.findBy({ id: id });
   }
 }

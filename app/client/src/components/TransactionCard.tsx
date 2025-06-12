@@ -134,8 +134,9 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
               onClick={() =>
                 socket.emit("transaction", {
                   client: "frontend",
-                  type: "delete",
-                  data: transaction.id,
+                  type: "transaction",
+                  operation: "delete",
+                  data: transaction,
                 })
               }
             />

@@ -10,6 +10,8 @@ import { TransactionModule } from './transaction/transaction.module';
 import { BudgetController } from './budget/budget.controller';
 import { BudgetService } from './budget/budget.service';
 import { BudgetModule } from './budget/budget.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AuditLogModule } from './audit/audit-log.module';
 
 @Module({
   imports: [
@@ -23,12 +25,22 @@ import { BudgetModule } from './budget/budget.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
-    AccountModule,
     EventsModule,
+    AccountModule,
     MonthModule,
     TransactionModule,
     BudgetModule,
+    AuditLogModule,
+    EventEmitterModule.forRoot({
+      wildcard: true, // <--- Required!
+      delimiter: '.', // optional, default is '.'
+    }),
   ],
-  controllers: [AccountController, MonthController, TransactionController, BudgetController],
+  controllers: [
+    AccountController,
+    MonthController,
+    TransactionController,
+    BudgetController,
+  ],
 })
 export class AppModule {}

@@ -1,3 +1,4 @@
+import { MonthDto } from '@/month/dto/month.dto';
 import { Expose } from 'class-transformer';
 
 export class TransactionDto {
@@ -17,5 +18,5 @@ export class TransactionDto {
   paid!: boolean;
 
   @Expose()
-  month!: number;
+  monthId!: number;
 }

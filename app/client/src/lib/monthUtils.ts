@@ -1,7 +1,6 @@
 import { Month } from "@/types";
 
 export async function calculateMonthBalances(months: Month[]) {
-//   const months = await this.monthRepo.find({ order: { position: "ASC" } });
   const balances: {
     month: Month;
     startingBalance: number;

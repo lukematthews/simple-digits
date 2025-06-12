@@ -25,6 +25,12 @@ export class Month {
   @Column()
   started: boolean;
 
+  @Column({ default: 0 })
+  startingBalance: number;
+
+  @Column({ default: 0 })
+  closingBalance: number;
+
   @OneToMany(() => Transaction, (txn) => txn.month, {
     cascade: true,
     eager: true,

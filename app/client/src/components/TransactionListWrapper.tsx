@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import TransactionCard from "./TransactionCard";
 import { socket } from "@/lib/socket";
-import { Month, Transaction } from "@/types";
+import { Month, Transaction, WsEvent } from "@/types";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
 
 interface Props {
@@ -14,36 +14,40 @@ export default function TransactionList({ transactions, month }: Props) {
   const [newTransaction, setNewTransaction] = useState<Transaction | null>(null);
 
   useEffect(() => {
-    socket.on("transaction", (message) => {
-      const handleMessage = async (message: { client: string; type: "create" | "update" | "delete"; data: any }) => {
-        if (message.client !== "api") return;
-        if (message.type === "create") {
-          setTransactions(await calculateTransactionBalances(month, [...transactions, message.data]));
-          setNewTransaction(null); // clear temp card
-        } else if (message.type === "update") {
-          setTransactions(
-            await calculateTransactionBalances(
-              month,
-              transactions.map((t) => (t.id === message.data.id ? message.data : t))
-            )
-          );
-        } else if (message.type === "delete") {
-          setTransactions(
-            await calculateTransactionBalances(
-              month,
-              transactions.filter((t) => t.id !== message.data)
-            )
-          );
-        }
-      };
-      handleMessage(message);
+    ["transaction.create", "transaction.update", "transaction.delete"].forEach((event) => {
+      socket.on(event, (m) => {
+
+        const handleMessage = async (event: string, message: WsEvent<Transaction>) => {
+          if (message.source !== "api") return;
+          if (message.operation === "create") {
+            setTransactions(await calculateTransactionBalances(month, [...transactions, message.payload]));
+            setNewTransaction(null);
+          } else if (message.operation === "update") {
+            setTransactions(
+              await calculateTransactionBalances(
+                month,
+                transactions.map((t) => (t.id === message.payload.id ? message.payload : t))
+              )
+            );
+          } else if (message.operation === "delete") {
+            setTransactions(
+              await calculateTransactionBalances(
+                month,
+                transactions.filter((t) => t.id !== message.payload.id)
+              )
+            );
+          }
+        };
+        console.log(`Handling transaction message ${JSON.stringify(m)}`);
+        handleMessage(event, m);
+      });
     });
 
     const calculate = async () => {
-        setTransactions(await calculateTransactionBalances(month, transactions));
-    }
+      setTransactions(await calculateTransactionBalances(month, transactions));
+    };
     calculate();
-    
+
     return () => {
       socket.off("transaction");
     };
@@ -64,7 +68,8 @@ export default function TransactionList({ transactions, month }: Props) {
   const handleDone = (txn: Transaction) => {
     socket.emit("transaction", {
       client: "frontend",
-      type: "create",
+      type: "transaction",
+      operation: "create",
       data: { description: txn.description, amount: txn.amount, paid: txn.paid, date: txn.date, month: month.id },
     });
   };

@@ -31,24 +31,19 @@ export class MonthController {
     return this.monthService.getMonthAtPosition(position);
   }
   
-  @Get('/balances')
-  getMonthBalances() {
-    return this.monthService.calculateBalances();
-  }
-
   @Post()
   create(@Body() month: CreateMonthDto) {
-    return this.monthService.create(month, {copyAccounts: true});
+    return this.monthService.createWithOptions(month, {copyAccounts: true});
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() body: Partial<UpdateMonthDto>) {
-    return this.monthService.update(Number(id), body);
+    return this.monthService.update('api', Number(id), body);
   }
 
   @Delete(':id')
   delete(@Param('id') id: string) {
-    return this.monthService.delete(Number(id));
+    return this.monthService.delete('api', Number(id));
   }
 
   @Post(':id/transaction')
