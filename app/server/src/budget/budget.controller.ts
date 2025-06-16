@@ -15,4 +15,9 @@ export class BudgetController {
   findAll() {
     return this.budgetService.findAll();
   }
+
+  @Get("/list")
+  list() {
+    return this.budgetService.list();
+  }
 }

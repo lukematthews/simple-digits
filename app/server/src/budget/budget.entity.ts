@@ -18,10 +18,12 @@ export class Budget {
   @Column()
   name: string;
 
+  @Column()
+  shortCode: string;
+
   @OneToMany(() => Month, (month) => month.budget, {
     cascade: true,
     eager: true,
   })
   months: Month[];
-
 }

@@ -4,6 +4,7 @@ import { Budget } from './budget.entity';
 import { Repository } from 'typeorm';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { Month } from '@/month/month.entity';
+import { BudgetSummaryDto } from './dto/budgetSummary.dto';
 
 @Injectable()
 export class BudgetService {
@@ -16,6 +17,11 @@ export class BudgetService {
 
   async findAll() {
     return await this.budgetRepo.find();
+  }
+
+  async list() {
+    const budgets = await this.budgetRepo.find();
+    return budgets.map(b => {return { id: b.id, name: b.name, shortCode: b.shortCode }});
   }
 
   async createBudget(budget: CreateBudgetDto) {
