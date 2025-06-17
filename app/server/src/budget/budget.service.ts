@@ -19,9 +19,15 @@ export class BudgetService {
     return await this.budgetRepo.find();
   }
 
+  async findBudget(id: number) {
+    return await this.budgetRepo.findOne({ where: { id: id } });
+  }
+
   async list() {
     const budgets = await this.budgetRepo.find();
-    return budgets.map(b => {return { id: b.id, name: b.name, shortCode: b.shortCode }});
+    return budgets.map((b) => {
+      return { id: b.id, name: b.name, shortCode: b.shortCode };
+    });
   }
 
   async createBudget(budget: CreateBudgetDto) {

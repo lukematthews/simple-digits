@@ -45,4 +45,7 @@ export class Month {
 
   @Column({ nullable: true })
   position: number;
+
+  @Column()
+  shortCode: string;
 }

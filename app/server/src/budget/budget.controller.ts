@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { BudgetService } from './budget.service';
 
@@ -19,5 +19,10 @@ export class BudgetController {
   @Get("/list")
   list() {
     return this.budgetService.list();
+  }
+
+  @Get("/:id")
+  findBudget(@Param(":id") id: number) {
+    return this.budgetService.findBudget(id);
   }
 }
