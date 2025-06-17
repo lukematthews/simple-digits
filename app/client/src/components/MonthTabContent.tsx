@@ -1,32 +1,28 @@
 import { TabsContent } from "@/components/ui/tabs";
-import { Transaction, Month } from "@/types";
 import MonthDetail from "./MonthDetail";
 import AccountManager from "./AccountManager";
 import TransactionList from "./TransactionListWrapper";
 import { useEffect, useState } from "react";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
-
+import { Month } from "@/types";
 
 type Props = {
-  monthId: string;
-  monthName: string;
   startingBalance: number;
-  transactions: Transaction[];
   month: Month;
 };
 
-export default function MonthTabContent({ month, monthId, transactions }: Props) {
-  const [calculated, setCalculated] = useState(transactions);
+export default function MonthTabContent({ month }: Props) {
+  const [calculated, setCalculated] = useState(month.transactions);
 
   useEffect(() => {
     const calculate = async () => {
-      setCalculated(await calculateTransactionBalances(month, transactions));
+      setCalculated(await calculateTransactionBalances(month, month.transactions));
     };
     calculate();
-  }, [month, transactions]);
+  }, [month]);
 
   return (
-    <TabsContent value={monthId}>
+    <TabsContent value={"monthtab-"+month.id}>
       <div className="flex h-screen">
         <div className="flex flex-col flex-grow">
           <div className="p-2">

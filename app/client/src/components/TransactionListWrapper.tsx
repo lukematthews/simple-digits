@@ -55,13 +55,13 @@ export default function TransactionList({ transactions, month }: Props) {
 
   const handleAdd = () => {
     setNewTransaction({
-      id: Date.now(), // temporary ID for React keying
+      id: ""+Date.now(), // temporary ID for React keying
       description: "",
       date: new Date().toISOString().slice(0, 10),
       paid: false,
       amount: 0,
       balance: 0,
-      month: month,
+      monthId: month.id,
     });
   };
 

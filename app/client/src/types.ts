@@ -1,37 +1,44 @@
-// src/types.ts
+export type Transaction = {
+  id: string;
+  description: string;
+  monthId: string;
+  amount: number;
+  date: string;
+  paid: boolean;
+  balance?: number;
+};
 
-export interface Budget {
-  id: number;
-  name: string;
-  months: Month[];
-}
-
-export interface Month {
+export type Month = {
   id: string;
   name: string;
-  started: boolean;
   transactions: Transaction[];
-  startingBalance: number;
-  closingBalance: number | null;
   accounts: Account[];
   position: number;
-}
+  started: boolean;
+  startingBalance: number;
+  closingBalance: number;
+  shortCode: string;
+};
 
-export interface Transaction {
-  id: number | null;
-  description: string;
-  date: string;
-  amount: number;
-  paid: boolean;
-  balance: number | null;
-  month: Month;
-}
-
-export interface Account {
-  id: number;
+export type Account = {
+  id: string;
   name: string;
-  balance: number | null | undefined;
-}
+  balance: number;
+};
+
+export type Budget = {
+  id: string;
+  name: string;
+  shortCode: string;
+  months: Month[];
+  accounts: Account[];
+};
+
+export type BudgetSummary = {
+  id: string;
+  name: string;
+  shortCode: string;
+};
 
 export interface MonthControlProps {
   months: Month[];
@@ -39,12 +46,6 @@ export interface MonthControlProps {
   activeMonth: string | null;
   setActiveMonth: React.Dispatch<React.SetStateAction<string | null>>;
   setShowTxnModal: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-export interface TransactionGridProps {
-  month: Month;
-  months: Month[];
-  setMonths: React.Dispatch<React.SetStateAction<Month[]>>;
 }
 
 export type WsEvent<T> = {
