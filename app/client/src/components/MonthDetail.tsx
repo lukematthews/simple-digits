@@ -1,10 +1,11 @@
-import { Month } from "@/types";
+import { Month, WsEvent } from "@/types";
 import { Checkbox } from "./ui/checkbox";
 import { useEffect, useState } from "react";
 import { Label } from "./ui/label";
 import CurrencyInput from "react-currency-input-field";
 import { socket } from "@/lib/socket";
-import { setBalances } from "@/lib/transactionUtils";
+import { useBudgetStore } from "@/store/useBudgetStore";
+import { format } from "date-fns";
 
 type Props = {
   month: Month;
@@ -12,102 +13,100 @@ type Props = {
 
 export default function MonthDetail({ month }: Props) {
   const [monthStarted, setMonthStarted] = useState<boolean>(month.started);
-  const [startingBalance, setStartingBalance] = useState<number>(0);
-  const [closingBalance, setClosingBalance] = useState<number>(0);
+  const [fromDate, setFromDate] = useState<string>(month.fromDate ? format(new Date(month.fromDate), "yyyy-MM-dd") : "");
+  const [toDate, setToDate] = useState<string>(month.toDate ? format(new Date(month.toDate), "yyyy-MM-dd") : "");
+  const updateMonth = useBudgetStore((s) => s.updateMonth);
 
-  interface WebSocketMessage {
-    client: "frontend";
-    type: "create" | "update" | "delete";
-    data: unknown;
-  }
+  const emitMonthUpdate = (updates: Partial<Month>) => {
+    const updated = {
+      ...month,
+      ...updates,
+      startingBalance: Number(month.startingBalance.toFixed(2)),
+      closingBalance: Number(month.closingBalance.toFixed(2)),
+    };
+    socket.emit("budgetEvent", {
+      source: "frontend",
+      entity: "month",
+      operation: "update",
+      id: month.id,
+      payload: updated,
+    } as WsEvent<Month>);
+    updateMonth(updated);
+  };
 
   const updateStarted = (started: boolean) => {
     setMonthStarted(started);
-    month.started = started;
-    socket.emit("month", { type: "update", data: month } as WebSocketMessage);
+    emitMonthUpdate({ started });
+  };
+
+  const handleDateChange = (type: "fromDate" | "toDate", value: string) => {
+    const dateObj = value ? new Date(value) : undefined;
+    if (type === "fromDate") {
+      setFromDate(value);
+      emitMonthUpdate({ fromDate: dateObj });
+    } else {
+      setToDate(value);
+      emitMonthUpdate({ toDate: dateObj });
+    }
   };
 
   useEffect(() => {
-    (async () => {
-      const balances = await setBalances(month);
-      setStartingBalance(balances.startingBalance);
-      setClosingBalance(balances.closingBalance);
-    })();
+    const handleMessage = (message: WsEvent<Month>) => {
+      if (message.source !== "api") return;
+      if (message.entity === "month" && message.operation === "update" && message.payload.id === month.id) {
+        setMonthStarted(message.payload.started ?? month.started);
+        setFromDate(message.payload.fromDate ? format(new Date(message.payload.fromDate), "yyyy-MM-dd") : "");
+        setToDate(message.payload.toDate ? format(new Date(message.payload.toDate), "yyyy-MM-dd") : "");
+      }
+    }
 
-    socket.on("month", (message) => {
-      console.log(`MonthDetail: received month message ${JSON.stringify(message)}`);
-      if (message.client !== "api") {
-        return;
-      }
-      if (message.type === "update") {
-        month.started = message.data.started;
-      }
-    });
+    socket.on("budgetEvent",  handleMessage);
 
-    socket.on("account", (message) => {
-      console.log(`MonthDetail: received account message ${JSON.stringify(message)}`);
-      if (message.client !== "api") {
-        return;
-      }
-      const monthForAccount = month.accounts.find((account) => account.id === message.data.id);
-      if (monthForAccount) {
-        monthForAccount.name = message.data.name;
-        monthForAccount.balance = message.data.balance;
-        (async () => {
-          const balances = await setBalances(month);
-          setStartingBalance(balances.startingBalance);
-          setClosingBalance(balances.closingBalance);
-        })();
-      }
-    });
-
-    socket.on("tramsaction", (message) => {
-      console.log(`MonthDetail: received transaction message ${JSON.stringify(message)}`);
-      if (message.client !== "api") {
-        return;
-      }
-
-      // a transaction update has happened. This means that the starting and closing balances need to be recalculated.
-    });
-  }, [monthStarted, month, month.accounts, month.transactions]);
+    return () => {
+      socket.off("budgetEvent", handleMessage);
+    };
+  }, [month]);
 
   return (
     <div>
-      <div className="flex">
-        <div className="flex-grow">
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-xl font-bold">{month.name}</h2>
-          </div>
-          <div className="flex items-center gap-2 mb-1">
-            <Checkbox checked={monthStarted} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
-            <Label>Started</Label>
-          </div>
-          <div className="flex items-center gap-2 mb-1">
-            <CurrencyInput
-              id="startingBalance"
-              name="startingBalance"
-              className="border rounded px-2 py-1"
-              disabled
-              fixedDecimalLength={2}
-              decimalScale={2}
-              intlConfig={{ locale: "en-AU", currency: "AUD" }}
-              value={startingBalance}
-            ></CurrencyInput>
-            <Label>Starting Balance</Label>
-          </div>
-          <div className="flex items-center gap-2 mb-1">
-            <CurrencyInput
-              id="startingBalance"
-              name="startingBalance"
-              className="border rounded px-2 py-1"
-              disabled
-              fixedDecimalLength={2}
-              decimalScale={2}
-              intlConfig={{ locale: "en-AU", currency: "AUD" }}
-              value={closingBalance}
-            ></CurrencyInput>
-            <Label>Closing Balance</Label>
-          </div>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-xl font-bold">{month.name}</h2>
+        </div>
+
+        {/* Started Checkbox */}
+        <div className="flex items-center gap-2">
+          <Checkbox checked={monthStarted} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
+          <Label>Started</Label>
+        </div>
+
+        <div className="flex items-center gap-2 mb-2">
+          <Label>Dates</Label>
+          <input
+            type="date"
+            className="border rounded px-2 py-1"
+            value={fromDate}
+            onChange={(e) => handleDateChange("fromDate", e.target.value)}
+          />
+          <span>-</span>
+          <input
+            type="date"
+            className="border rounded px-2 py-1"
+            value={toDate}
+            onChange={(e) => handleDateChange("toDate", e.target.value)}
+          />
+        </div>
+
+        {/* Starting Balance */}
+        <div className="flex items-center gap-2">
+          <CurrencyInput className={`border rounded px-2 py-1 ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`} disabled fixedDecimalLength={2} decimalScale={2} intlConfig={{ locale: "en-AU", currency: "AUD" }} value={month.startingBalance} />
+          <Label>Starting Balance</Label>
+        </div>
+
+        {/* Closing Balance */}
+        <div className="flex items-center gap-2">
+          <CurrencyInput className={`border rounded px-2 py-1 ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`} disabled fixedDecimalLength={2} decimalScale={2} intlConfig={{ locale: "en-AU", currency: "AUD" }} value={month.closingBalance} />
+          <Label>Closing Balance</Label>
         </div>
       </div>
     </div>

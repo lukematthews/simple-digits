@@ -11,6 +11,7 @@ import { MonthService } from '@/month/month.service';
 import { CreateMonthDto } from './dto/create-month.dto';
 import { UpdateMonthDto } from './dto/update-month.dto';
 import { CreateTransactionDto } from '@/transaction/dto/create-transaction.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Controller('month')
 export class MonthController {
@@ -19,6 +20,11 @@ export class MonthController {
   @Get()
   findAll() {
     return this.monthService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: number) {
+    return this.monthService.findOne(id);
   }
 
   @Get(':id/account')
@@ -30,15 +36,15 @@ export class MonthController {
   getMonthAtPosition(@Param('position') position: number) {
     return this.monthService.getMonthAtPosition(position);
   }
-  
+
   @Post()
   create(@Body() month: CreateMonthDto) {
-    return this.monthService.createWithOptions(month, {copyAccounts: true});
+    return this.monthService.createWithOptions(month, { copyAccounts: true });
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() body: Partial<UpdateMonthDto>) {
-    return this.monthService.update('api', Number(id), body);
+    return this.monthService.update('api', Number(id), instanceToPlain(body));
   }
 
   @Delete(':id')

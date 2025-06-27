@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 
 import LoadingSpinner from "./LoadingSpinner";
 import { useBudgetStore } from "@/store/useBudgetStore";
+import { calculateMonthBalances } from "@/lib/monthUtils";
+import { v4 as uuid } from "uuid";
 
 export default function BudgetApp() {
   const navigate = useNavigate();
@@ -39,16 +41,23 @@ export default function BudgetApp() {
   }, []);
 
   useEffect(() => {
-    if (!budget || !monthShortCode) return;
+    if (!budget) return;
 
-    const matchingMonth = budget.months.find((m) => m.shortCode === monthShortCode);
-    if (matchingMonth) {
-      setActiveMonth(`monthtab-${matchingMonth.id}`);
+    // calculate the month balances...
+    calculateMonthBalances(budget.months);
+
+    if (monthShortCode) {
+      const matchingMonth = budget.months.find((m) => m.shortCode === monthShortCode);
+      if (matchingMonth) {
+        setActiveMonth(`monthtab-${matchingMonth.id}`);
+      }
     } else {
-      // Optionally fallback to latest month
-      const latest = budget.months.reduce((a, b) => (a.position > b.position ? a : b));
-      if (latest) {
-        navigate(`/${shortCode}/${latest.shortCode}`, { replace: true });
+      if (budget.months && budget.months.length > 0) {
+        // Optionally fallback to latest month
+        const latest = budget.months.reduce((a, b) => (a.position > b.position ? a : b));
+        if (latest) {
+          navigate(`/${shortCode}/${latest.shortCode}`, { replace: true });
+        }
       }
     }
   }, [budget, monthShortCode]);
@@ -57,44 +66,44 @@ export default function BudgetApp() {
     if (!shortCode || budgetSummaries.length === 0) return;
 
     const id = getId(shortCode);
+
     if (id) {
-      loadBudgetById(id);
+      (async () => {
+        await loadBudgetById(id);
+        // You can’t reliably read budget here
+        // Instead, react in another useEffect
+      })();
     }
   }, [shortCode, budgetSummaries, getId, loadBudgetById]);
 
-  // console.log("shortCode:", shortCode);
-  // console.log("budgetSummaries:", budgetSummaries);
-  // console.log("budgetId:", shortCode ? getId(shortCode) : undefined);
-  // console.log("currentBudget:", budget);
-  // console.log("isBudgetLoading:", isBudgetLoading);
-
   if (!shortCode || isBudgetLoading) {
-    console.log(`shortCode: ${shortCode} isBudetLoading: ${isBudgetLoading}`);
     return <div>Loading budget...</div>;
   }
 
   if (!budget) {
-    console.log(`budget: ${budget}`);
     return <div>Loading budget... Still no budget</div>;
   }
-
-  // console.log(`We're good. shortCode: ${shortCode} isBudetLoading: ${isBudgetLoading} budget: ${budget}`);
 
   function handleAddMonth() {
     const name = formMonth.trim();
     if (!name) return;
-
-    const previousMonth = budget?.months.find((m) => selectedMonth === m.id);
-    socket.emit("month", {
-      client: "frontend",
-      type: "create",
-      options: {
-        copyAccounts: formCopyAccounts,
-      },
-      data: {
-        name,
-        started: formStarted,
-        position: previousMonth?.position ? previousMonth.position + 1 : (budget?.months?.length ?? 0 + 1),
+    const id = uuid();
+    const previousMonth = budget?.months.find((m) => selectedMonth === ""+m.id);
+    socket.emit("budgetEvent", {
+      source: "frontend",
+      entity: "month.create",
+      operation: "create",
+      id: id,
+      payload: {
+        options: {
+          copyAccounts: formCopyAccounts,
+        },
+        month: {
+          name: name,
+          started: formStarted,
+          position: previousMonth?.position ? previousMonth.position + 1 : (budget?.months?.length ?? 0 + 1),
+          budget: budget?.id
+        },
       },
     });
 

@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Delete, Put, Body, Param } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { Account } from './account.entity';
+import { CreateAccountDto } from './dto/create-account.dto';
 
 @Controller('accounts')
 export class AccountController {
@@ -12,8 +13,8 @@ export class AccountController {
   }
 
   @Post()
-  create(@Body() account: Partial<Account>) {
-    return this.accountService.create('api', account);
+  create(@Body() account: CreateAccountDto) {
+    return this.accountService.createFromDto(account);
   }
 
   @Put(':id')

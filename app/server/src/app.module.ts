@@ -8,7 +8,6 @@ import { MonthModule } from './month/month.module';
 import { TransactionController } from './transaction/transaction.controller';
 import { TransactionModule } from './transaction/transaction.module';
 import { BudgetController } from './budget/budget.controller';
-import { BudgetService } from './budget/budget.service';
 import { BudgetModule } from './budget/budget.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuditLogModule } from './audit/audit-log.module';

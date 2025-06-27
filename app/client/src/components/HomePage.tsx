@@ -18,6 +18,10 @@ export default function HomePage() {
         </h1>
       </div>
 
+      {budgetSummaries.length === 0 && (
+        <p className="text-center text-gray-500">No budgets found.</p>
+      )}
+      
       {/* Budget cards in lower half, centered horizontally */}
       <div className="flex-1 flex items-start justify-center px-6">
         <div className="w-full max-w-5xl flex flex-wrap justify-center gap-8">

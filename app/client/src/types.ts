@@ -1,6 +1,7 @@
 export type Transaction = {
-  id: string;
+  id?: string;
   description: string;
+  // budgetId: string;
   monthId: string;
   amount: number;
   date: string;
@@ -18,12 +19,16 @@ export type Month = {
   startingBalance: number;
   closingBalance: number;
   shortCode: string;
+  fromDate: Date;
+  toDate: Date;
 };
 
 export type Account = {
-  id: string;
+  id?: string;
   name: string;
   balance: number;
+  monthId: string;
+  // budgetId: string;
 };
 
 export type Budget = {
@@ -31,7 +36,6 @@ export type Budget = {
   name: string;
   shortCode: string;
   months: Month[];
-  accounts: Account[];
 };
 
 export type BudgetSummary = {
@@ -48,10 +52,17 @@ export interface MonthControlProps {
   setShowTxnModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export type WsEvent<T> = {
-  source: "api";
-  entity: string;
-  operation: "create" | "update" | "delete";
-  id: string | number;
-  payload: T;
-};
+export type WsEvent<T> =
+  | {
+      source: "api" | "frontend";
+      entity: string;
+      operation: "create";
+      payload: T;
+    }
+  | {
+      source: "api" | "frontend";
+      entity: string;
+      operation: "update" | "delete";
+      id: string | number;
+      payload: T;
+    };

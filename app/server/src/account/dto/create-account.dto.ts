@@ -6,4 +6,6 @@ export class CreateAccountDto {
 
     @IsNumber()
     balance: number;
+
+    monthId: number;
 }

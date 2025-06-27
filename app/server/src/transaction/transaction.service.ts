@@ -1,18 +1,21 @@
-import { SubscribeMessage } from '@nestjs/websockets';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Transaction } from './transaction.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { Month } from '../month/month.entity';
 import { TransactionDto } from './dto/transaction.dto.';
-import { BaseEntityService } from '@/common/base-entity.service';
+import { BaseEntityService, WsEvent } from '@/common/base-entity.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WsEventBusService } from '@/events/ws-event-bus.service';
 import { Types } from '@/Constants';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 
 @Injectable()
-export class TransactionService extends BaseEntityService<Transaction> {
+export class TransactionService extends BaseEntityService<
+  Transaction,
+  TransactionDto
+> {
   constructor(
     @InjectRepository(Transaction)
     private transactionRepo: Repository<Transaction>,
@@ -21,48 +24,99 @@ export class TransactionService extends BaseEntityService<Transaction> {
     eventEmitter: EventEmitter2,
     bus: WsEventBusService,
   ) {
-    super(transactionRepo, eventEmitter, 'transaction', bus);
+    super(transactionRepo, eventEmitter, 'transaction', bus, TransactionDto);
   }
 
   onModuleInit() {
     this.bus.subscribe('transaction', this.handleTransactionMessage.bind(this));
   }
 
-  handleTransactionMessage(message: any) {
-    const handler = async (payload: {operation: "create" | "update" | "delete", data: Partial<Transaction>}) => {
+  override getDefaultRelations() {
+    return { month: true };
+  }
+
+  protected denormalizeDto(
+    dto: TransactionDto,
+    entity: Transaction,
+  ): TransactionDto {
+    dto.monthId = String(entity.month?.id);
+    // dto.budgetId = String(entity.month?.budget?.id);
+    return dto;
+  }
+
+  handleTransactionMessage(message: WsEvent<TransactionDto>) {
+    const handler = async (message: WsEvent<TransactionDto>) => {
       console.log('handled transaction message in TransactionService');
-      if (payload.operation === Types.CREATE) {
-        await this.create('api', payload.data);
-      } else if (payload.operation === Types.UPDATE) {
-        await this.update('api', payload.data.id, payload.data);
-      } else if (payload.operation === Types.DELETE) {
-        this.delete('api', payload.data.id);
+      if (message.operation === Types.CREATE) {
+        await this.create('api', {
+          description: message.payload.description,
+          amount: message.payload.amount,
+          date: message.payload.date,
+          paid: message.payload.paid,
+          month: { id: Number(message.payload.monthId) },
+        });
+      } else if (message.operation === Types.UPDATE) {
+        await this.update(
+          'api',
+          Number(message.payload.id),
+          instanceToPlain({
+            description: message.payload.description,
+            amount: message.payload.amount,
+            date: message.payload.date,
+            paid: message.payload.paid,
+          }),
+        );
+      } else if (message.operation === Types.DELETE) {
+        this.delete('api', Number(message.payload.id));
       }
     };
     handler(message);
   }
 
-  async createTransactions(transactions: CreateTransactionDto[]) {
+  async createTransactions(
+    budgetId: number,
+    transactions: CreateTransactionDto[],
+  ) {
     const transactionDtos: TransactionDto[] = [];
+    const unmatchedTransactions: CreateTransactionDto[] = [];
+
+    // Load months only for the specified budget
+    const allMonths = await this.monthRepo.find({
+      where: { budget: { id: budgetId } },
+    });
+
     for (const t of transactions) {
-      const month = await this.monthRepo.findOne({ where: { id: t.month } });
-      const newTransaction = await this.transactionRepo.save({ 
+      const txDate = new Date(t.date);
+
+      const month = allMonths.find((m) => {
+        const from = new Date(m.fromDate);
+        const to = new Date(m.toDate);
+        return txDate >= from && txDate <= to;
+      });
+
+      if (!month) {
+        unmatchedTransactions.push(t);
+        continue;
+      }
+
+      const newTransaction = await this.transactionRepo.save({
         description: t.description,
         amount: t.amount,
         date: t.date,
         paid: t.paid,
-        month: month,
+        month,
       });
-      transactionDtos.push({
-        id: newTransaction.id,
-        monthId: newTransaction.month.id,
-        description: newTransaction.description,
-        date: newTransaction.date,
-        amount: newTransaction.amount,
-        paid: newTransaction.paid,
-      });
+
+      transactionDtos.push(plainToInstance(TransactionDto, newTransaction));
     }
-    return transactionDtos;
+
+    return {
+      created: transactionDtos.length,
+      unmatched: {
+        count: unmatchedTransactions.length,
+        transactions: unmatchedTransactions,
+      },
+    };
   }
 
   async addTransaction(month: Month, transaction: CreateTransactionDto) {
@@ -73,11 +127,6 @@ export class TransactionService extends BaseEntityService<Transaction> {
       paid: transaction.paid,
       month: month,
     });
-    // this.eventsGateway.broadcastEvent(EventSource.TRANSACTION, {
-    //   client: CLIENT,
-    //   type: Types.CREATE,
-    //   data: created,
-    // });
     return created;
   }
 }

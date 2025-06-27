@@ -14,10 +14,8 @@ export class Month {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Budget, (budget) => budget.months, {
-    onDelete: 'CASCADE',
-  })
-  budget!: Budget;
+  @ManyToOne(() => Budget, (budget) => budget.months, { eager: false })
+  budget: Budget;
 
   @Column()
   name: string;
@@ -25,21 +23,19 @@ export class Month {
   @Column()
   started: boolean;
 
-  @Column({ default: 0 })
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
   startingBalance: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
   closingBalance: number;
 
   @OneToMany(() => Transaction, (txn) => txn.month, {
     cascade: true,
-    eager: true,
   })
   transactions: Transaction[];
 
   @OneToMany(() => Account, (account) => account.month, {
     cascade: ['insert', 'update'],
-    eager: true,
   })
   accounts: Account[];
 
@@ -48,4 +44,10 @@ export class Month {
 
   @Column()
   shortCode: string;
+
+  @Column({ nullable: true })
+  fromDate: Date;
+
+  @Column({ nullable: true })
+  toDate: Date;
 }

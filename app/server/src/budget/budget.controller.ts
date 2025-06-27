@@ -21,8 +21,8 @@ export class BudgetController {
     return this.budgetService.list();
   }
 
-  @Get("/:id")
-  findBudget(@Param(":id") id: number) {
+  @Get(":id")
+  findBudget(@Param("id") id: number) {
     return this.budgetService.findBudget(id);
   }
 }

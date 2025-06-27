@@ -9,6 +9,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WsEventBusService } from './ws-event-bus.service';
+import { Transaction } from '@/transaction/transaction.entity';
+import { WsEvent } from '@/common/base-entity.service';
 
 @WebSocketGateway({ cors: true })
 export class EventsGateway implements OnGatewayInit {
@@ -22,15 +24,18 @@ export class EventsGateway implements OnGatewayInit {
       this.server.emit(event, data);
     });
   }
-  
+
   emitToAll(event: string, data: any) {
     this.server.emit(event, data);
   }
 
-  // @SubscribeMessage('*')
-  @SubscribeMessage('transaction')
-  handleMessage(@MessageBody() data: any, @ConnectedSocket() client: Socket) {
-    if (!data?.type) return;
-    this.bus.dispatch(data.type, data, client);
+  @SubscribeMessage('budgetEvent')
+  handleTransactionMessage(
+    @MessageBody() data: WsEvent<Transaction>,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!data?.entity) return;
+    console.log(`received budgetEvent message - dispatching on bus: ${JSON.stringify(data)}`);
+    this.bus.dispatch(data.entity, data, client);
   }
 }

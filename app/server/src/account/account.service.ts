@@ -3,34 +3,61 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from './account.entity';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BaseEntityService } from '../common/base-entity.service';
+import { BaseEntityService, WsEvent } from '../common/base-entity.service';
 import { WsEventBusService } from '@/events/ws-event-bus.service';
 import { Types } from '@/Constants';
+import { AccountDto } from './dto/account.dto';
+import { CreateAccountDto } from './dto/create-account.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
-export class AccountService extends BaseEntityService<Account> {
+export class AccountService extends BaseEntityService<Account, AccountDto> {
   constructor(
     @InjectRepository(Account)
     repo: Repository<Account>,
     eventEmitter: EventEmitter2,
-    bus: WsEventBusService
+    bus: WsEventBusService,
   ) {
-    super(repo, eventEmitter, 'account', bus);
+    super(repo, eventEmitter, 'account', bus, AccountDto);
   }
 
   onModuleInit() {
     this.bus.subscribe('account', this.handleAccountMessage.bind(this));
   }
 
-  handleAccountMessage(message: any) {
-    const handler = async (payload: {operation: "create" | "update" | "delete", data: Partial<Account>}) => {
-      console.log('handled transaction message in TransactionService');
-      if (payload.operation === Types.CREATE) {
-        await this.create('api', payload.data);
-      } else if (payload.operation === Types.UPDATE) {
-        await this.update('api', payload.data.id, payload.data);
-      } else if (payload.operation === Types.DELETE) {
-        this.delete('api', payload.data.id);
+  override getDefaultRelations(): Record<string, any> {
+    return {
+      month: true
+    };
+  }
+
+
+  createFromDto(dto: CreateAccountDto) {
+    const account = this.repo.create({
+      ...dto,
+      month: { id: dto.monthId },
+    });
+    this.repo.save(account);
+  }
+
+  protected denormalizeDto(dto: AccountDto, entity: Account): AccountDto {
+    dto.monthId = String(entity.month?.id);
+    return dto;
+  }
+
+  handleAccountMessage(message: WsEvent<AccountDto>) {
+    const handler = async (message: WsEvent<AccountDto>) => {
+      console.log('handled transaction message in AccountService');
+      if (message.operation === Types.CREATE) {
+        await this.create('api', instanceToPlain(message.payload));
+      } else if (message.operation === Types.UPDATE) {
+        await this.update(
+          'api',
+          Number(message.payload.id),
+          instanceToPlain(message.payload),
+        );
+      } else if (message.operation === Types.DELETE) {
+        this.delete('api', Number(message.payload.id));
       }
     };
     handler(message);

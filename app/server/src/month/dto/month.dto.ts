@@ -1,15 +1,7 @@
 import { AccountDto } from '@/account/dto/account.dto';
 import { BudgetDto } from '@/budget/dto/budget.dto';
 import { TransactionDto } from '@/transaction/dto/transaction.dto.';
-import { Expose, Type } from 'class-transformer';
-
-class RelatedMonthDto {
-  @Expose()
-  id: number;
-
-  @Expose()
-  name: string;
-}
+import { Expose, Transform, Type } from 'class-transformer';
 
 export class MonthDto {
   @Expose()
@@ -19,6 +11,15 @@ export class MonthDto {
 
   @Expose()
   name: string;
+
+  @Expose()
+  shortCode: string;
+
+  @Expose()
+  fromDate: Date;
+
+  @Expose()
+  toDate: Date;
 
   @Expose()
   started: boolean;

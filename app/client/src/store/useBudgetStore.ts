@@ -1,7 +1,10 @@
 // store/useBudgetStore.ts
 import { create } from "zustand";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { Budget, BudgetSummary, Month, Transaction, Account } from "@/types";
 import { WS_URL } from "@/config";
+import { calculateTransactionBalances } from "@/lib/transactionUtils";
+import { calculateMonthBalances } from "@/lib/monthUtils";
 
 type BudgetSummarySlice = {
   budgetSummaries: BudgetSummary[];
@@ -30,6 +33,7 @@ type TransactionSlice = {
 
 type MonthSlice = {
   addMonth: (month: Month) => void;
+  updateMonth: (month: Month) => void;
   reorderMonths: (months: Month[]) => void;
 };
 
@@ -39,123 +43,230 @@ type AccountSlice = {
 
 type Store = BudgetSummarySlice & BudgetSlice & TransactionSlice & MonthSlice & AccountSlice;
 
-export const useBudgetStore = create<Store>((set, get) => ({
-  // ─── Budget Slice ─────────────────────────────────────
-  budgets: [],
-  budgetSummaries: [],
-  isBudgetLoading: false,
+export function populateMonthIds(budget: Budget): Budget {
+  const updatedMonths = budget.months.map((month) => {
+    const updatedTransactions = month.transactions.map((tx) => ({
+      ...tx,
+      monthId: month.id,
+    }));
 
-  setBudgets: (budgets) => set({ budgets }),
-  setCurrentBudget: (budget) => set({ currentBudget: budget }),
+    const updatedAccounts = month.accounts.map((acc) => ({
+      ...acc,
+      monthId: month.id,
+    }));
 
-  setBudgetSummaries: (budgetSummaries) => set({ budgetSummaries }),
-  setCurrentBudgetSummary: (budgetSummary) => set({ currentBudgetSummary: budgetSummary }),
-  getBudgetIdByShortCode: (shortCode: string) => {
-    const summary = get().budgetSummaries.find((b) => b.shortCode === shortCode);
-    return summary?.id;
-  },
-  loadBudgetSummaries: async () => {
-    try {
-      const res = await fetch(WS_URL + "/budget/list");
-      if (!res.ok) throw new Error("Failed to load budgets");
-      const data: BudgetSummary[] = await res.json();
-      set({ budgetSummaries: data });
-    } catch (err) {
-      console.error("Error loading budgets:", err);
-    }
-  },
-  loadBudgets: async () => {
-    try {
-      const res = await fetch(WS_URL + "/budget");
-      if (!res.ok) throw new Error("Failed to load budgets");
-      const data: Budget[] = await res.json();
-      set({ budgets: data });
-    } catch (err) {
-      console.error("Error loading budgets:", err);
-    }
-  },
-  loadBudgetById: async (id) => {
-    set({ isBudgetLoading: true });
-    try {
-      const res = await fetch(`${WS_URL}/budget/${id}`);
-      if (!res.ok) throw new Error("Failed to load budget");
-      const budget: Budget = await res.json();
-      set({ currentBudget: budget });
-    } catch (err) {
-      console.error("Error loading budget", err);
-    } finally {
-      set({ isBudgetLoading: false });
-    }
-  },
-  // ─── Transaction Slice ────────────────────────────────
-  updateTransaction: (updated) =>
-    set((state) => ({
-      currentBudget: {
-        ...state.currentBudget!,
-        months: state.currentBudget!.months.map((m) =>
-          m.id === updated.monthId
-            ? {
-                ...m,
-                transactions: m.transactions.map((t) => (t.id === updated.id ? updated : t)),
-              }
-            : m
-        ),
+    return {
+      ...month,
+      transactions: updatedTransactions,
+      accounts: updatedAccounts,
+    };
+  });
+
+  return {
+    ...budget,
+    months: updatedMonths,
+  };
+}
+
+export const useBudgetStore = create<Store>()(
+  subscribeWithSelector(
+    devtools((set, get) => ({
+      // ─── Budget Slice ─────────────────────────────────────
+      budgets: [],
+      budgetSummaries: [],
+      isBudgetLoading: false,
+
+      setBudgets: (budgets) => set({ budgets }),
+      setCurrentBudget: (budget) => set({ currentBudget: budget }),
+
+      setBudgetSummaries: (budgetSummaries) => set({ budgetSummaries }),
+      setCurrentBudgetSummary: (budgetSummary) => set({ currentBudgetSummary: budgetSummary }),
+      getBudgetIdByShortCode: (shortCode: string) => {
+        const summary = get().budgetSummaries.find((b) => b.shortCode === shortCode);
+        return summary?.id;
       },
-    })),
-
-  addTransaction: (tx) =>
-    set((state) => ({
-      currentBudget: {
-        ...state.currentBudget!,
-        months: state.currentBudget!.months.map((m) =>
-          m.id === tx.monthId
-            ? {
-                ...m,
-                transactions: [...m.transactions, tx],
-              }
-            : m
-        ),
+      loadBudgetSummaries: async () => {
+        try {
+          const res = await fetch(WS_URL + "/budget/list");
+          if (!res.ok) throw new Error("Failed to load budgets");
+          const data: BudgetSummary[] = await res.json();
+          set({ budgetSummaries: data });
+        } catch (err) {
+          console.error("Error loading budgets:", err);
+        }
       },
-    })),
-
-  deleteTransaction: (id, monthId) =>
-    set((state) => ({
-      currentBudget: {
-        ...state.currentBudget!,
-        months: state.currentBudget!.months.map((m) =>
-          m.id === monthId
-            ? {
-                ...m,
-                transactions: m.transactions.filter((t) => t.id !== id),
-              }
-            : m
-        ),
+      loadBudgets: async () => {
+        try {
+          const res = await fetch(WS_URL + "/budget");
+          if (!res.ok) throw new Error("Failed to load budgets");
+          const data: Budget[] = await res.json();
+          set({ budgets: data });
+        } catch (err) {
+          console.error("Error loading budgets:", err);
+        }
       },
-    })),
-
-  // ─── Month Slice ───────────────────────────────────────
-  addMonth: (month) =>
-    set((state) => ({
-      currentBudget: {
-        ...state.currentBudget!,
-        months: [...state.currentBudget!.months, month],
+      loadBudgetById: async (id) => {
+        set({ isBudgetLoading: true });
+        try {
+          const res = await fetch(`${WS_URL}/budget/${id}`);
+          if (!res.ok) throw new Error("Failed to load budget");
+          const budget: Budget = populateMonthIds(await res.json());
+          document.title = budget.name;
+          set({ currentBudget: budget });
+        } catch (err) {
+          console.error("Error loading budget", err);
+        } finally {
+          set({ isBudgetLoading: false });
+        }
       },
-    })),
 
-  reorderMonths: (months) =>
-    set((state) => ({
-      currentBudget: {
-        ...state.currentBudget!,
-        months,
-      },
-    })),
+      // ─── Transaction Slice ────────────────────────────────
+      updateTransaction: (updated) =>
+        set((state) => {
+          const budget = state.currentBudget;
+          if (!budget) return {};
 
-  // ─── Account Slice ─────────────────────────────────────
-  updateAccount: (updated) =>
-    set((state) => ({
-      currentBudget: {
-        ...state.currentBudget!,
-        accounts: state.currentBudget!.accounts.map((a) => (a.id === updated.id ? updated : a)),
-      },
-    })),
-}));
+          const updatedMonths = budget.months.map((m) => {
+            if (String(m.id) !== String(updated.monthId)) return m;
+
+            const updatedTransactions = m.transactions.map((t) => (String(t.id) === String(updated.id) ? updated : t));
+            const recalculatedTransactions = calculateTransactionBalances(m, updatedTransactions);
+
+            return {
+              ...m,
+              transactions: recalculatedTransactions,
+            };
+          });
+
+          const recalculatedMonths = calculateMonthBalances(updatedMonths);
+
+          return {
+            currentBudget: {
+              ...budget,
+              months: recalculatedMonths,
+            },
+          };
+        }),
+
+      addTransaction: (tx) =>
+        set((state) => {
+          const budget = state.currentBudget;
+          if (!budget) return {};
+
+          const updatedMonths = budget.months.map((m) => {
+            if (String(m.id) !== String(tx.monthId)) return m;
+
+            const updatedTransactions = calculateTransactionBalances(m, [...m.transactions, tx]);
+
+            return {
+              ...m,
+              transactions: updatedTransactions,
+            };
+          });
+
+          const recalculatedMonths = calculateMonthBalances(updatedMonths);
+
+          return {
+            currentBudget: {
+              ...budget,
+              months: recalculatedMonths,
+            },
+          };
+        }),
+
+      deleteTransaction: (id, monthId) =>
+        set((state) => {
+          const budget = state.currentBudget;
+          if (!budget) return {};
+
+          const updatedMonths = budget.months.map((m) => {
+            if (String(m.id) !== String(monthId)) return m;
+
+            const filteredTransactions = m.transactions.filter((t) => String(t.id) !== String(id));
+            const recalculatedTransactions = calculateTransactionBalances(m, filteredTransactions);
+
+            return {
+              ...m,
+              transactions: recalculatedTransactions,
+            };
+          });
+
+          const recalculatedMonths = calculateMonthBalances(updatedMonths);
+
+          return {
+            currentBudget: {
+              ...budget,
+              months: recalculatedMonths,
+            },
+          };
+        }),
+
+      // ─── Month Slice ───────────────────────────────────────
+      addMonth: (month) =>
+        set((state) => ({
+          currentBudget: {
+            ...state.currentBudget!,
+            months: [...state.currentBudget!.months, month],
+          },
+        })),
+
+      updateMonth: (updated) =>
+        set((state) => {
+          const budget = state.currentBudget;
+          if (!budget) return {};
+
+          const updatedMonths = budget.months.map((m) => (m.id === updated.id ? { ...m, ...updated } : m));
+
+          const recalculatedMonths = calculateMonthBalances(updatedMonths);
+
+          return {
+            currentBudget: {
+              ...budget,
+              months: recalculatedMonths,
+            },
+          };
+        }),
+
+      reorderMonths: (months) =>
+        set((state) => ({
+          currentBudget: {
+            ...state.currentBudget!,
+            months,
+          },
+        })),
+
+      // ─── Account Slice ─────────────────────────────────────
+      updateAccount: (updated) =>
+        set((state) => {
+          const budget = state.currentBudget;
+          if (!budget) return {};
+
+          const updatedMonths = budget.months.map((month) => {
+            if (String(month.id) !== String(updated.monthId)) return month;
+
+            // Update account
+            const updatedAccounts = month.accounts.map((acc) => (String(acc.id) === String(updated.id) ? updated : acc));
+
+            // Recalculate transactions for this month
+            const recalculatedTransactions = calculateTransactionBalances(month, month.transactions);
+
+            return {
+              ...month,
+              accounts: updatedAccounts,
+              transactions: recalculatedTransactions,
+            };
+          });
+
+          // Recalculate month balances based on all months
+          const recalculatedMonths = calculateMonthBalances(updatedMonths);
+
+          return {
+            currentBudget: {
+              ...budget,
+              months: recalculatedMonths,
+            },
+          };
+        }),
+    }))
+  )
+);

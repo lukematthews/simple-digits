@@ -1,10 +1,10 @@
-import { MonthDto } from '@/month/dto/month.dto';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export class TransactionDto {
   @Expose()
-  id: number;
-  
+  @Transform(({ value }) => String(value))
+  id: string;
+
   @Expose()
   description!: string;
 
@@ -18,5 +18,11 @@ export class TransactionDto {
   paid!: boolean;
 
   @Expose()
-  monthId!: number;
+  @Transform(({ obj }) => String(obj.month?.id))
+  monthId: string;
+
+  @Expose()
+  get month() {
+    return this.monthId ? { id: +this.monthId } : undefined;
+  }
 }

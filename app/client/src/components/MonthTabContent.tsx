@@ -2,8 +2,6 @@ import { TabsContent } from "@/components/ui/tabs";
 import MonthDetail from "./MonthDetail";
 import AccountManager from "./AccountManager";
 import TransactionList from "./TransactionListWrapper";
-import { useEffect, useState } from "react";
-import { calculateTransactionBalances } from "@/lib/transactionUtils";
 import { Month } from "@/types";
 
 type Props = {
@@ -12,14 +10,6 @@ type Props = {
 };
 
 export default function MonthTabContent({ month }: Props) {
-  const [calculated, setCalculated] = useState(month.transactions);
-
-  useEffect(() => {
-    const calculate = async () => {
-      setCalculated(await calculateTransactionBalances(month, month.transactions));
-    };
-    calculate();
-  }, [month]);
 
   return (
     <TabsContent value={"monthtab-"+month.id}>
@@ -29,11 +19,11 @@ export default function MonthTabContent({ month }: Props) {
             <MonthDetail key={`month-detail-${month.id}`} month={month}></MonthDetail>
           </div>
           <div className="flex-grow p-2">
-            <TransactionList transactions={calculated} month={month}></TransactionList>
+            <TransactionList month={month}></TransactionList>
           </div>
         </div>
         <div className="p-2">
-          <AccountManager accounts={month.accounts}></AccountManager>
+          <AccountManager month={month} accounts={month.accounts}></AccountManager>
         </div>
       </div>
     </TabsContent>

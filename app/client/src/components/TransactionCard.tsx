@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
-import { Transaction } from "@/types";
+import { Transaction, WsEvent } from "@/types";
 import { Checkbox } from "./ui/checkbox";
 import { useState } from "react";
 import { socket } from "@/lib/socket";
@@ -27,15 +27,23 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
   const [amount, setAmount] = useState(transaction.amount);
 
   const [editingDesc, setEditingDesc] = useState(isNew);
-  const [editingDate, setEditingDate] = useState(isNew);
-  const [editingAmount, setEditingAmount] = useState(isNew);
+  const [, setEditingDate] = useState(isNew);
+  const [, setEditingAmount] = useState(isNew);
 
   const emitUpdate = (updatedFields: Partial<Transaction>) => {
     const updatedTxn: Transaction = {
       ...transaction,
       ...updatedFields,
     };
-    socket.emit("transaction", { client: "frontend", type: "update", data: updatedTxn });
+    const event: WsEvent<Transaction> = {
+      source: "frontend",
+      entity: "transaction",
+      operation: "update",
+      id: updatedTxn.id!,
+      payload: updatedTxn,
+    };
+
+    socket.emit("budgetEvent", event);
   };
 
   const emitCreate = () => {
@@ -50,7 +58,7 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
   };
 
   return (
-    <Card key={transaction.id} className="mb-2 py-1 hover:bg-gray-100 transition-colors duration-200">
+    <Card key={transaction.id} className="mb-0 py-1 hover:bg-gray-100 transition-colors duration-200">
       <CardContent className="flex justify-between items-center gap-4">
         {/* Description */}
         <div className="w-1/4">
@@ -104,7 +112,7 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
         </div>
 
         {/* Paid */}
-        <div>
+        <div className="w-20 flex justify-center">
           <Checkbox
             checked={paid}
             onCheckedChange={(val) => {
@@ -116,7 +124,6 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
             }}
           />
         </div>
-
         {/* Balance */}
         <div className={`h-full w-32 p-1 rounded flex items-center justify-end ${transaction.balance! >= 0 ? "bg-green-100" : "bg-red-100"}`}>
           <p className="text-lg text-gray-500">{formatCurrency(transaction.balance ?? 0)}</p>
@@ -132,12 +139,13 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
             <Trash2
               className="w-4 h-4 text-red-500 cursor-pointer"
               onClick={() =>
-                socket.emit("transaction", {
-                  client: "frontend",
-                  type: "transaction",
+                socket.emit("budgetEvent", {
+                  source: "frontend",
+                  entity: "transaction",
                   operation: "delete",
-                  data: transaction,
-                })
+                  id: transaction.id!,
+                  payload: transaction,
+                } as WsEvent<Transaction>)
               }
             />
           )}
