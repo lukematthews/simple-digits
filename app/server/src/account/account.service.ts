@@ -27,10 +27,9 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
 
   override getDefaultRelations(): Record<string, any> {
     return {
-      month: true
+      month: true,
     };
   }
-
 
   createFromDto(dto: CreateAccountDto) {
     const account = this.repo.create({
@@ -49,7 +48,11 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
     const handler = async (message: WsEvent<AccountDto>) => {
       console.log('handled transaction message in AccountService');
       if (message.operation === Types.CREATE) {
-        await this.create('api', instanceToPlain(message.payload));
+        await this.create('api', {
+          name: message.payload.name,
+          balance: message.payload.balance,
+          month: { id: Number(message.payload.monthId) },
+        });
       } else if (message.operation === Types.UPDATE) {
         await this.update(
           'api',

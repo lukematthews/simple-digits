@@ -47,14 +47,12 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
   }
 
   protected denormalizeDto(dto: MonthDto, entity: Month): MonthDto {
-    dto.transactions.forEach((transaction) => {
+    for (const transaction of dto.transactions ?? []) {
       transaction.monthId = String(entity.id);
-      // transaction.budgetId = String(entity.budget?.id);
-    });
-    dto.accounts.forEach((account) => {
+    }
+    for (const account of dto.accounts ?? []) {
       account.monthId = String(entity.id);
-      // account.budgetId = String(entity.budget?.id);
-    });
+    }
     return dto;
   }
 
