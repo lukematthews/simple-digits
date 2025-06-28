@@ -23,7 +23,7 @@ export default function MonthTabContent({ month }: Props) {
           </div>
         </div>
         <div className="p-2">
-          <AccountManager month={month} accounts={month.accounts}></AccountManager>
+          <AccountManager month={month}></AccountManager>
         </div>
       </div>
     </TabsContent>

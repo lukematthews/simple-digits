@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
 import { socket } from "@/lib/socket";
 import { useBudgetStore } from "@/store/useBudgetStore";
-import { Transaction, Account, Month, WsEvent } from "@/types";
+import { Transaction, Account, Month, WsEvent, Budget } from "@/types";
 import { calculateMonthBalances } from "@/lib/monthUtils";
 
 export function useSocketEvents() {
   /* ---- grab store actions once (stable refs) ---- */
-  const { addTransaction, updateTransaction, deleteTransaction, addMonth, updateMonth, reorderMonths, updateAccount } = useBudgetStore.getState();
+  const { addTransaction, updateTransaction, deleteTransaction, addMonth, updateMonth, reorderMonths, addAccount, updateAccount, deleteAccount } = useBudgetStore.getState();
 
   /* ---- keep latest budget reference inside a ref so the handler never closes over stale data ---- */
   const budgetRef = useRef(useBudgetStore.getState().currentBudget);
@@ -18,7 +18,7 @@ export function useSocketEvents() {
   );
 
   /* ---- stable handler references ---- */
-  const handleBudgetEvent = (message: any) => {
+  const handleBudgetEvent = (message: WsEvent<Account|Month|Transaction|Budget>) => {
     if (message.source !== "api") return;
 
     switch (message.entity) {
@@ -37,7 +37,9 @@ export function useSocketEvents() {
       }
       case "account": {
         const acc = message.payload as Account;
-        if (message.operation === "update") updateAccount(acc);
+        if (message.operation === "create") addAccount(acc);
+        else if (message.operation === "update") updateAccount(acc);
+        else if (message.operation === "delete") deleteAccount(acc.id!, acc.monthId);        
         break;
       }
     }

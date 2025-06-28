@@ -1,7 +1,6 @@
 export type Transaction = {
   id?: string;
   description: string;
-  // budgetId: string;
   monthId: string;
   amount: number;
   date: string;
@@ -28,7 +27,6 @@ export type Account = {
   name: string;
   balance: number;
   monthId: string;
-  // budgetId: string;
 };
 
 export type Budget = {

@@ -39,6 +39,8 @@ type MonthSlice = {
 
 type AccountSlice = {
   updateAccount: (account: Account) => void;
+  addAccount: (account: Account) => void;
+  deleteAccount: (accountId: string, monthId: string) => void;
 };
 
 type Store = BudgetSummarySlice & BudgetSlice & TransactionSlice & MonthSlice & AccountSlice;
@@ -264,6 +266,48 @@ export const useBudgetStore = create<Store>()(
             currentBudget: {
               ...budget,
               months: recalculatedMonths,
+            },
+          };
+        }),
+
+      addAccount: (newAcc) =>
+        set((state) => {
+          const budget = state.currentBudget;
+          if (!budget) return {};
+
+          const updatedMonths = budget.months.map((month) => {
+            if (String(month.id) !== String(newAcc.monthId)) return month;
+            return {
+              ...month,
+              accounts: [...month.accounts, newAcc],
+            };
+          });
+
+          return {
+            currentBudget: {
+              ...budget,
+              months: updatedMonths,
+            },
+          };
+        }),
+
+      deleteAccount: (accountId, monthId) =>
+        set((state) => {
+          const budget = state.currentBudget;
+          if (!budget) return {};
+
+          const updatedMonths = budget.months.map((month) => {
+            if (String(month.id) !== String(monthId)) return month;
+            return {
+              ...month,
+              accounts: month.accounts.filter((a) => a.id !== accountId),
+            };
+          });
+
+          return {
+            currentBudget: {
+              ...budget,
+              months: updatedMonths,
             },
           };
         }),
