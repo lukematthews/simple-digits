@@ -108,10 +108,24 @@ Create transactions for Powershop monthly from 11/7/2025 for $-273.18
 Create transactions for Pet Insurance monthly from 17/7/2025 for $-65.88
 
 
+Changes:
+FIXED BUG -     Add Account: acts as an update instead of a create. Then fails because the id is not found.
+FIXED FEATURE - Make account management like transactions.
+FIXED BUG -     Adding a new month does not add it to the tabs
+      BUG -     Performance
+FIXED FEATURE - Move Add Transaction button to bottom as well.
+FIXED FEATURE - Standardise currency input
+      FEATURE - Sticky header / month detail
+      FEATURE - Click to edit month name
+      FEATURE - Click to edit transactions fields.
+      FEATURE - Dropdown to change budgets
+      FEATURE - Add date range to Add Month
 
-
-
-
+Change this component so that you can create / update / delete accounts.
+- Each account row should be editable.
+- When a field loses focus, it should emit an update for that value
+- Clicking Add Account should create new account row. There should be a Done / Save icon to then emit the create event.
+- There should be a Trash icon to delete the account
 
 
 
