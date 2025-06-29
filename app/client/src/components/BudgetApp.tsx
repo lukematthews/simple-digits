@@ -126,7 +126,7 @@ export default function BudgetApp() {
           const month = budget?.months.find((m) => `monthtab-${m.id}` === id);
           if (month) {
             navigate(`/${shortCode}/${month.shortCode}`);
-            document.title = `Salary Budget: ${month.name}`;
+            document.title = `${budget.name}: ${month.name}`;
           }
         }}
       >

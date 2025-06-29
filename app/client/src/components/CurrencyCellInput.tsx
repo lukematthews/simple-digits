@@ -3,9 +3,10 @@ import React, { useState, useEffect } from "react";
 type Props = {
   value: number;
   onChange: (newValue: number) => void;
+  placeholder: string;
 };
 
-export const CurrencyCellInput: React.FC<Props> = ({ value, onChange }) => {
+export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholder }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value.toString());
 
@@ -46,6 +47,7 @@ export const CurrencyCellInput: React.FC<Props> = ({ value, onChange }) => {
     <input
       type="text"
       value={isEditing ? draft : formatCurrency(value)}
+      placeholder={placeholder}
       onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}

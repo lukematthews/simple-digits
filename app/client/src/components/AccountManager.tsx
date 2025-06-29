@@ -1,14 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { socket } from "@/lib/socket";
 import { Account, Month, WsEvent } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
-import { CurrencyInput } from "./CurrencyInput";
 import { Plus, Check, Trash2 } from "lucide-react";
 import { CurrencyCellInput } from "./CurrencyCellInput";
 
 type Props = { month: Month };
 
-/** Simple helper: emit once, no debounce (spec says "on blur") */
+type DraftAccount = {
+  id: string;
+  name: string;
+  balance: number;
+  monthId: string;
+};
+
 const emitSocket = (op: "create" | "update" | "delete", payload: Account) =>
   socket.emit("budgetEvent", {
     source: "frontend",
@@ -19,37 +24,13 @@ const emitSocket = (op: "create" | "update" | "delete", payload: Account) =>
   } as WsEvent<Account>);
 
 export default function AccountManager({ month }: Props) {
-  /* ---------- GLOBAL STATE (existing accounts) -------------------- */
   const accounts = useBudgetStore((s) => s.currentBudget?.months.find((m) => m.id === month.id)?.accounts ?? []);
-  const addAccountToStore = useBudgetStore((s) => s.addAccount);
   const updateAccountInStore = useBudgetStore((s) => s.updateAccount);
   const deleteAccountInStore = useBudgetStore((s) => s.deleteAccount);
 
-  /* ---------- LOCAL STATE (draft rows not yet saved) -------------- */
-  const [drafts, setDrafts] = useState<Account[]>([]);
+  const [drafts, setDrafts] = useState<DraftAccount[]>([]);
 
-  /* ---------- SOCKET LISTENERS ----------------------------------- */
-  useEffect(() => {
-    const handler = (msg: WsEvent<Account>) => {
-      if (msg.entity !== "account" || msg.source !== "api") return;
-
-      switch (msg.operation) {
-        case "create":
-          addAccountToStore(msg.payload);
-          break;
-        case "update":
-          updateAccountInStore(msg.payload);
-          break;
-        case "delete":
-          deleteAccountInStore(msg.payload.id!, msg.payload.monthId!);
-          break;
-      }
-    };
-    socket.on("budgetEvent", handler);
-    return () => socket.off("budgetEvent", handler);
-  }, [addAccountToStore, updateAccountInStore, deleteAccountInStore]);
-
-  /* ---------- Handlers: EXISTING ACCOUNTS ------------------------- */
+  // -------- EXISTING HANDLERS --------
   const handleExistingChange = (id: string, field: keyof Account, value: string | number) => {
     const original = accounts.find((a) => a.id === id);
     if (!original) return;
@@ -58,7 +39,7 @@ export default function AccountManager({ month }: Props) {
       ...original,
       [field]: field === "balance" ? parseFloat(value as string) || 0 : value,
     };
-    updateAccountInStore(updated); // live UI update
+    updateAccountInStore(updated);
   };
 
   const handleExistingBlur = (id: string) => {
@@ -67,18 +48,18 @@ export default function AccountManager({ month }: Props) {
   };
 
   const deleteExisting = (acc: Account) => {
-    deleteAccountInStore(acc.id!, acc.monthId!); // optimistic
+    deleteAccountInStore(acc.id!, acc.monthId!);
     emitSocket("delete", acc);
   };
 
-  /* ---------- Handlers: DRAFT ACCOUNTS ---------------------------- */
+  // -------- DRAFT HANDLERS --------
   const addDraftRow = () =>
-    setDrafts((d) => [
+    setDrafts((d): DraftAccount[] => [
       ...d,
       {
         id: crypto.randomUUID(),
         name: "",
-        balance: 0,
+        balance: 0, // stays a string
         monthId: month.id,
       },
     ]);
@@ -89,22 +70,27 @@ export default function AccountManager({ month }: Props) {
         d.id === id
           ? {
               ...d,
-              [field]: field === "balance" ? parseFloat(value as string) || 0 : value,
+              [field]: field === "balance" ? (value as string) : value,
             }
           : d
       )
     );
 
-  const saveDraft = (draft: Account) => {
-    // Emit create
-    emitSocket("create", draft);
-    // Remove local draft row (server echo will add real account)
+  const saveDraft = (draft: DraftAccount) => {
+    const numericBalance = parseFloat(String(draft.balance));
+
     setDrafts((d) => d.filter((row) => row.id !== draft.id));
+
+    emitSocket("create", {
+      ...draft,
+      id: undefined, // backend assigns ID
+      balance: isNaN(numericBalance) ? 0 : numericBalance,
+    });
   };
 
   const discardDraft = (id: string) => setDrafts((d) => d.filter((row) => row.id !== id));
 
-  /* ---------- UI -------------------------------------------------- */
+  // -------- UI --------
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto">
       <h2 className="text-xl font-semibold mb-2">Accounts</h2>
@@ -119,22 +105,22 @@ export default function AccountManager({ month }: Props) {
             onChange={(e) => handleExistingChange(acc.id!, "name", e.target.value)}
             onBlur={() => handleExistingBlur(acc.id!)}
           />
-          <CurrencyCellInput value={acc.balance ?? 0} onChange={(v) => handleExistingChange(acc.id!, "balance", v)}></CurrencyCellInput>
+          <CurrencyCellInput placeholder="0.00" value={acc.balance ?? 0} onChange={(v) => handleExistingChange(acc.id!, "balance", v)} />
           <button className="p-1 text-red-500 hover:text-red-700" title="Delete" onClick={() => deleteExisting(acc)}>
             <Trash2 size={18} />
           </button>
         </div>
       ))}
 
-      {/* Draft rows */}
+      {/* Draft accounts */}
       {drafts.map((draft) => (
         <div key={draft.id} className="flex items-center gap-2">
-          <input className="border p-1 flex-1" value={draft.name} placeholder="Account name" onChange={(e) => updateDraft(draft.id!, "name", e.target.value)} />
-          <CurrencyInput value={String(draft.balance)} onChange={(v) => updateDraft(draft.id!, "balance", v)} />
+          <input className="border p-1 flex-1" value={draft.name} placeholder="Account name" onChange={(e) => updateDraft(draft.id, "name", e.target.value)} />
+          <CurrencyCellInput value={draft.balance} placeholder="0.00" onChange={(v) => updateDraft(draft.id, "balance", v)} />
           <button className="p-1 text-green-600 hover:text-green-800" title="Save" onClick={() => saveDraft(draft)}>
             <Check size={18} />
           </button>
-          <button className="p-1 text-red-500 hover:text-red-700" title="Discard" onClick={() => discardDraft(draft.id!)}>
+          <button className="p-1 text-red-500 hover:text-red-700" title="Discard" onClick={() => discardDraft(draft.id)}>
             <Trash2 size={18} />
           </button>
         </div>

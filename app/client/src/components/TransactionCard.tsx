@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { Transaction, WsEvent } from "@/types";
 import { Checkbox } from "./ui/checkbox";
 import { useState } from "react";
 import { socket } from "@/lib/socket";
-import { NumericFormat } from "react-number-format";
+import { CurrencyCellInput } from "./CurrencyCellInput";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -18,9 +18,10 @@ type Props = {
   transaction: Transaction;
   isNew?: boolean;
   onDone?: (txn: Transaction) => void;
+  onDiscard?: (id: string) => void;
 };
 
-export default function TransactionCard({ transaction, isNew = false, onDone }: Props) {
+export default function TransactionCard({ transaction, isNew = false, onDone, onDiscard }: Props) {
   const [description, setDescription] = useState(transaction.description);
   const [date, setDate] = useState(transaction.date);
   const [paid, setPaid] = useState(transaction.paid);
@@ -64,6 +65,7 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
         <div className="w-1/4">
           <input
             className="border p-1 w-full"
+            placeholder="Description"
             value={description}
             autoFocus={editingDesc}
             onChange={(e) => setDescription(e.target.value)}
@@ -94,21 +96,17 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
 
         {/* Amount */}
         <div className="text-right w-32">
-          <NumericFormat
+          <CurrencyCellInput
             value={amount}
-            thousandSeparator
-            prefix="$"
-            decimalScale={2}
-            fixedDecimalScale
-            onValueChange={(values) => setAmount(values.floatValue || 0)}
-            onBlur={() => {
+            onChange={(val) => {
+              setAmount(val);
               setEditingAmount(false);
               if (!isNew && amount !== transaction.amount) {
                 emitUpdate({ amount });
               }
             }}
-            className="border p-1 w-full text-right"
-          />
+            placeholder="0.00"
+          ></CurrencyCellInput>
         </div>
 
         {/* Paid */}
@@ -132,9 +130,18 @@ export default function TransactionCard({ transaction, isNew = false, onDone }: 
         {/* Actions */}
         <div className="flex gap-2">
           {isNew ? (
-            <button className="text-blue-500 font-semibold" onClick={emitCreate}>
-              Done
-            </button>
+            <>
+              <button className="p-1 text-green-600 hover:text-green-800" title="Save" onClick={emitCreate}>
+                <Check size={18} />
+              </button>
+              <button
+                className="p-1 text-red-500 hover:text-red-700"
+                title="Discard"
+                onClick={() => onDiscard?.(transaction.id!)} // <- call parent to remove from draft list
+              >
+                <Trash2 size={18} />
+              </button>
+            </>
           ) : (
             <Trash2
               className="w-4 h-4 text-red-500 cursor-pointer"
