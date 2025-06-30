@@ -89,6 +89,7 @@ export const useBudgetStore = create<Store>()(
       },
       loadBudgetSummaries: async () => {
         try {
+          console.log(`API: ${WS_URL + "/budget/list"}`);
           const res = await fetch(WS_URL + "/budget/list");
           if (!res.ok) throw new Error("Failed to load budgets");
           const data: BudgetSummary[] = await res.json();
