@@ -91,7 +91,7 @@ export default function BudgetApp() {
     const previousMonth = budget?.months.find((m) => selectedMonth === ""+m.id);
     socket.emit("budgetEvent", {
       source: "frontend",
-      entity: "month.create",
+      entity: "month",
       operation: "create",
       id: id,
       payload: {
