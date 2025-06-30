@@ -9,6 +9,9 @@ export class BudgetDto {
   name: string;
 
   @Expose()
+  shortCode: string;
+
+  @Expose()
   @Type(() => MonthDto)
   months: MonthDto[];
 }
