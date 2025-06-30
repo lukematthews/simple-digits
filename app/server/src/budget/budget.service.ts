@@ -70,6 +70,6 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
         months,
       });
     }
-    return await this.budgetRepo.save({ name: budget.name, months: [] });
+    return await this.budgetRepo.save({ name: budget.name, shortCode: budget.shortCode, months: [] });
   }
 }
