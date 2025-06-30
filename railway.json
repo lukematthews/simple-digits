@@ -1,6 +1,7 @@
 {
   "build": {
-    "dockerfile": "Dockerfile.backend"
+    "dockerfile": "Dockerfile.backend",
+    "context": "."
   },
   "start": "npm run start:prod",
   "healthcheckPath": "/"
