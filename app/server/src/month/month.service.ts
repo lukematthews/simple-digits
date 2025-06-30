@@ -12,7 +12,7 @@ import { AccountService } from '@/account/account.service';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { BaseEntityService, WsEvent } from '@/common/base-entity.service';
 import { WsEventBusService } from '@/events/ws-event-bus.service';
-import { camelCase } from 'change-case';
+import { camelCase } from 'lodash';
 import { isValid } from 'date-fns';
 
 @Injectable()
