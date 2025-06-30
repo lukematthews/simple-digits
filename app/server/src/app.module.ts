@@ -41,11 +41,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 
         return {
           type: 'postgres',
-          host: config.get('DB_HOST', 'localhost'),
-          port: parseInt(config.get('DB_PORT', '5432')),
-          username: config.get('DB_USER', 'postgres'),
-          password: config.get('DB_PASSWORD', 'postgres'),
-          database: config.get('DB_NAME', 'budget_db'),
+          host: config.get('DB_HOST', ''),
+          port: parseInt(config.get('DB_PORT', '')),
+          username: config.get('DB_USER', ''),
+          password: config.get('DB_PASSWORD', ''),
+          database: config.get('DB_NAME', ''),
           autoLoadEntities: true,
           synchronize: true,
         };
