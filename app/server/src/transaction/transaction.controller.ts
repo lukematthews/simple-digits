@@ -1,15 +1,19 @@
-import { BadRequestException, Body, Controller, Get, Post, Put, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { User } from '@/user/user.entity';
 
 @Controller('transaction')
+@UseGuards(AuthGuard('jwt'))
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Get()
-  async findAll() {
-    return this.transactionService.findAll();
+  async findAll(@CurrentUser() user: User) {
+    return this.transactionService.findAll(user.id);
   }
 
   @Put(':id')
@@ -18,6 +22,7 @@ export class TransactionController {
   @Post('batch')
   async createTransactionsBatch(
     @Query('budgetId') budgetId: string,
+    @CurrentUser() user: User,
     @Body() transactions: CreateTransactionDto[],
   ) {
     if (!budgetId) {
@@ -31,6 +36,7 @@ export class TransactionController {
 
     return this.transactionService.createTransactions(
       budgetIdNum,
+      user.id,
       transactions,
     );
   }

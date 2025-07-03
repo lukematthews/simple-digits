@@ -1,19 +1,30 @@
 import { Account } from '@/account/account.entity';
 import { Budget } from '@/budget/budget.entity';
+import { OwnedEntity } from '@/common/owned.entity';
 import { Transaction } from '@/transaction/transaction.entity';
+import { User } from '@/user/user.entity';
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 @Entity()
-export class Month {
+export class Month implements OwnedEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user!: User;
+
+  @Column({ nullable: true })
+  userId!: string;
+
+  @JoinColumn({ name: 'budgetId' })
   @ManyToOne(() => Budget, (budget) => budget.months, { eager: false })
   budget: Budget;
 

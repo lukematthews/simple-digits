@@ -44,23 +44,24 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
     return dto;
   }
 
-  handleAccountMessage(message: WsEvent<AccountDto>) {
+  handleAccountMessage(message: WsEvent<AccountDto>, userId: string) {
     const handler = async (message: WsEvent<AccountDto>) => {
       console.log('handled transaction message in AccountService');
       if (message.operation === Types.CREATE) {
-        await this.create('api', {
+        await this.create(userId, 'api', {
           name: message.payload.name,
           balance: message.payload.balance,
           month: { id: Number(message.payload.monthId) },
         });
       } else if (message.operation === Types.UPDATE) {
         await this.update(
+          userId,
           'api',
           Number(message.payload.id),
           instanceToPlain(message.payload),
         );
       } else if (message.operation === Types.DELETE) {
-        this.delete('api', Number(message.payload.id));
+        this.delete(userId, 'api', Number(message.payload.id));
       }
     };
     handler(message);

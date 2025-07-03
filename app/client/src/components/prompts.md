@@ -69,17 +69,20 @@ Starting and closing balances should be stored against the month in state.
 
 
  
-
+Starting from 1/7/2025 and finishing on 31/1/2026
+budgetId: 1
+userId: c702a2ce-0bbb-4cee-8334-ff2a546faf77
+paid: false
 Create transactions for Macquarie on the first day every month for $7000
 Create transactions for Toorak on the 15th of every month for $-3708.70
 Create transactions for Woodleigh on the 20th of every month for $-6794.50
-Create transactions for Expenses weekly from 4/8/2025 for $-1037.57
-Create transactions for Luke fortnightly from 7/8/2025 for $5816.18
-Create transactions for Karen fortnightly from 12/8/2025 for $1680
-Create transactions for Luke Leave fortnightly from 7/8/2025 for $-894.80
-Create transactions for Bills weekly from 7/8/2025 for $-643.43
-Create transactions for Bills - Annual weekly from 7/8/2025 for $-184.12
-Create transactions for Bills - Boat weekly from 7/8/2025 for $-220.96
+Create transactions for Expenses weekly from 7/7/2025 for $-1037.57
+Create transactions for Luke fortnightly from 10/7/2025 for $5816.18
+Create transactions for Karen fortnightly from 1/7/2025 for $1680
+Create transactions for Luke Leave fortnightly from 10/7/2025 for $-894.80
+Create transactions for Bills weekly from 3/7/2025 for $-643.43
+Create transactions for Bills - Annual weekly from 3/7/2025 for $-184.12
+Create transactions for Bills - Boat weekly from 3/7/2025 for $-220.96
 
 
 Bills budget:

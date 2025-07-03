@@ -40,16 +40,16 @@ export class TransactionService extends BaseEntityService<
     entity: Transaction,
   ): TransactionDto {
     dto.monthId = String(entity.month?.id);
-    // dto.budgetId = String(entity.month?.budget?.id);
     return dto;
   }
 
-  handleTransactionMessage(message: WsEvent<TransactionDto>) {
+  handleTransactionMessage(message: WsEvent<TransactionDto>, userId: string) {
     const handler = async (message: WsEvent<TransactionDto>) => {
       console.log('handled transaction message in TransactionService');
       if (message.operation === Types.CREATE) {
-        await this.create('api', {
+        await this.create(userId, 'api', {
           description: message.payload.description,
+          userId: userId,
           amount: message.payload.amount,
           date: message.payload.date,
           paid: message.payload.paid,
@@ -57,6 +57,7 @@ export class TransactionService extends BaseEntityService<
         });
       } else if (message.operation === Types.UPDATE) {
         await this.update(
+          userId,
           'api',
           Number(message.payload.id),
           instanceToPlain({
@@ -67,7 +68,7 @@ export class TransactionService extends BaseEntityService<
           }),
         );
       } else if (message.operation === Types.DELETE) {
-        this.delete('api', Number(message.payload.id));
+        this.delete(userId, 'api', Number(message.payload.id));
       }
     };
     handler(message);
@@ -75,6 +76,7 @@ export class TransactionService extends BaseEntityService<
 
   async createTransactions(
     budgetId: number,
+    userId: string,
     transactions: CreateTransactionDto[],
   ) {
     const transactionDtos: TransactionDto[] = [];
@@ -82,7 +84,7 @@ export class TransactionService extends BaseEntityService<
 
     // Load months only for the specified budget
     const allMonths = await this.monthRepo.find({
-      where: { budget: { id: budgetId } },
+      where: { budget: { id: budgetId }, userId },
     });
 
     for (const t of transactions) {
@@ -105,6 +107,7 @@ export class TransactionService extends BaseEntityService<
         date: t.date,
         paid: t.paid,
         month,
+        userId: userId
       });
 
       transactionDtos.push(plainToInstance(TransactionDto, newTransaction));
@@ -119,13 +122,14 @@ export class TransactionService extends BaseEntityService<
     };
   }
 
-  async addTransaction(month: Month, transaction: CreateTransactionDto) {
+  async addTransaction(month: Month, userId: string, transaction: CreateTransactionDto) {
     const created = await this.transactionRepo.save({
       amount: transaction.amount,
       date: transaction.date,
       description: transaction.description,
       paid: transaction.paid,
       month: month,
+      userId
     });
     return created;
   }

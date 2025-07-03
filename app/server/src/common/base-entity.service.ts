@@ -3,8 +3,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { emitAuditEvent } from '../audit/audit-emitter.util';
 import { WsEventBusService } from '@/events/ws-event-bus.service';
 import { plainToInstance } from 'class-transformer';
+import { OwnedEntity } from './owned.entity';
 
-export abstract class BaseEntityService<T extends { id: any }, Dto = T> {
+export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
   protected constructor(
     protected readonly repo: Repository<T>,
     protected readonly eventEmitter: EventEmitter2,
@@ -25,7 +26,8 @@ export abstract class BaseEntityService<T extends { id: any }, Dto = T> {
 
   protected abstract denormalizeDto(dto: Dto, entity: T): Dto;
 
-  async create(actor: string, data: DeepPartial<T>): Promise<Dto> {
+  async create(userId: string, actor: string, data: DeepPartial<T>): Promise<Dto> {
+    data.userId = userId;
     const entity = this.repo.create(data);
     const saved = await this.repo.save(entity);
     const reloaded = await this.repo.findOneOrFail({
@@ -52,12 +54,13 @@ export abstract class BaseEntityService<T extends { id: any }, Dto = T> {
   }
 
   async update(
+    userId: string,
     actor: string,
     id: T['id'],
     updates: DeepPartial<T>,
   ): Promise<Dto> {
     const before = await this.repo.findOneOrFail({
-      where: { id: id } as any,
+      where: { id, userId } as any,
       relations: this.getDefaultRelations(),
     });
     const { id: _, ...safeUpdates } = updates as any;
@@ -84,11 +87,12 @@ export abstract class BaseEntityService<T extends { id: any }, Dto = T> {
 
     return this.toDto(saved);
   }
-  async delete(actor: string, id: T['id']): Promise<void> {
+
+  async delete(userId: string, actor: string, id: T['id']): Promise<void> {
     const relations = this.getDefaultRelations();
 
     const entity = await this.repo.findOneOrFail({
-      where: { id } as any,
+      where: { id, userId } as any,
       relations,
     });
     await this.repo.remove(entity);
@@ -120,10 +124,10 @@ export abstract class BaseEntityService<T extends { id: any }, Dto = T> {
     }
   }
 
-  async findOne(id: T['id']): Promise<Dto | null> {
+  async findOne(id: T['id'], userId: string): Promise<Dto | null> {
     const relations = this.getDefaultRelations();
     const entity = await this.repo.findOne({
-      where: { id } as any,
+      where: { id, userId } as any,
       relations,
     });
 
@@ -137,8 +141,8 @@ export abstract class BaseEntityService<T extends { id: any }, Dto = T> {
     };
   }
 
-  async findAll(): Promise<Dto[]> {
-    const entities = await this.repo.find();
+  async findAll(userId: string): Promise<Dto[]> {
+    const entities = await this.repo.findBy({ userId } as any);
     console.log(`entities ${JSON.stringify(entities)}`);
     console.log(`dtoClass: ${this.dtoClass}`);
     return entities.map((entity) => this.toDto(entity));

@@ -32,10 +32,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
 
   onModuleInit() {
     this.bus.subscribe('month', this.handleMonthMessage.bind(this));
-    this.bus.subscribe(
-      'month.create',
-      this.handleMonthCreateMessage.bind(this),
-    );
+    this.bus.subscribe('month', this.handleMonthCreateMessage.bind(this));
   }
 
   override getDefaultRelations(): Record<string, any> {
@@ -56,17 +53,18 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
     return dto;
   }
 
-  handleMonthMessage(message: WsEvent<MonthDto>) {
+  handleMonthMessage(message: WsEvent<MonthDto>, userId: string) {
     const handler = async (message: WsEvent<MonthDto>) => {
       console.log('handled month message in MonthService');
       if (message.operation === Types.UPDATE) {
         await this.update(
+          userId,
           'api',
           message.payload.id,
           plainToInstance(Month, message.payload),
         );
       } else if (message.operation === Types.DELETE) {
-        this.delete('api', message.payload.id);
+        this.delete(userId, 'api', message.payload.id);
       }
     };
     handler(message);
@@ -77,11 +75,12 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
       month: CreateMonthDto;
       options: { copyAccounts: boolean };
     }>,
+    userId: string
   ) {
     const handler = async (message: any) => {
-      console.log('handled month.create message in MonthService');
       if (message.operation === Types.CREATE) {
         await this.createWithOptions(
+          userId,
           message.payload.month,
           message.payload.options,
         );
@@ -99,21 +98,28 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
     );
   }
 
-  async getMonthAtPosition(position: number) {
-    return await this.monthRepo.findOne({ where: { position: position } });
+  async getMonthAtPosition(userId: string, position: number) {
+    return await this.monthRepo.findOne({
+      where: { position: position, userId },
+    });
   }
 
-  async getAccounts(id: number) {
-    const month = await this.monthRepo.findOne({ where: { id: id } });
+  async getAccounts(userId: string, id: number) {
+    const month = await this.monthRepo.findOne({ where: { id, userId } });
     return month.accounts;
   }
 
-  async addTransaction(id: number, transaction: CreateTransactionDto) {
+  async addTransaction(
+    userId: string,
+    id: number,
+    transaction: CreateTransactionDto,
+  ) {
     const month = await this.monthRepo.findOneBy({ id: id });
     if (month) {
       transaction.month = id;
       const createdTransaction = await this.transactionService.addTransaction(
         month,
+        userId,
         transaction,
       );
       month.transactions.push(createdTransaction);
@@ -123,6 +129,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
   }
 
   async createWithOptions(
+    userId: string,
     monthData: Partial<CreateMonthDto> & { id?: number },
     options: { copyAccounts: boolean },
   ): Promise<Month> {
@@ -139,6 +146,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
           where: {
             id: monthData.id,
             budget: instanceToPlain(monthData.budget),
+            userId,
           },
         });
 
@@ -164,6 +172,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
               target: targetPosition,
               current: currentPosition,
             })
+            .andWhere('userId = :userId', { userId })
             .execute();
         } else {
           // Moving down: shift up months between current and target
@@ -176,6 +185,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
               target: targetPosition,
               current: currentPosition,
             })
+            .andWhere('userId = :userId', { userId })
             .execute();
         }
 
@@ -192,6 +202,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
           .set({ position: () => `"position" + 1` })
           .where('"budgetId" = :budgetId', { budgetId: monthData.budget.id })
           .andWhere('"position" >= :position', { position: targetPosition })
+          .andWhere('userId = :userId', { userId })
           .execute();
 
         const newMonth = plainToInstance(Month, monthData);
@@ -204,14 +215,14 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
         // create accounts.
         if (options.copyAccounts && saved.position > 1) {
           const previousMonth = await this.monthRepo.findOne({
-            where: { position: saved.position - 1 },
+            where: { position: saved.position - 1, userId },
           });
           const previousAccounts = await this.accountService.findByMonthId(
             previousMonth.id,
           );
           await Promise.all(
             previousAccounts.map((account) =>
-              this.accountService.create('api', {
+              this.accountService.create(userId, 'api', {
                 name: account.name,
                 balance: account.balance,
                 month: saved,
