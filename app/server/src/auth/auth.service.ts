@@ -17,7 +17,7 @@ export class AuthService {
   async login(user: User) {
     const payload: JwtPayload = { sub: user.id, email: user.email };
     return {
-      access: this.jwt.sign(payload, { expiresIn: '15m' }),
+      access: this.jwt.sign(payload, { expiresIn: '30d' }),
       refresh: this.jwt.sign(payload, {
         secret: process.env.JWT_REFRESH_SECRET,
         expiresIn: '30d',

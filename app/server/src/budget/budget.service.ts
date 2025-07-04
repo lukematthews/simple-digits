@@ -6,11 +6,13 @@ import { CreateBudgetDto } from './dto/create-budget.dto';
 import { Month } from '@/month/month.entity';
 import { BudgetSummaryDto } from './dto/budgetSummary.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BaseEntityService } from '@/common/base-entity.service';
+import { BaseEntityService, WsEvent } from '@/common/base-entity.service';
 import { BudgetDto } from './dto/budget.dto';
 import { WsEventBusService } from '@/events/ws-event-bus.service';
 import { plainToInstance } from 'class-transformer';
 import { MonthSummary } from './dto/MonthSummary.dto';
+import { Types } from '@/Constants';
+import _ from "lodash";
 
 @Injectable()
 export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
@@ -23,6 +25,39 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     bus: WsEventBusService,
   ) {
     super(budgetRepo, eventEmitter, 'month', bus, BudgetDto);
+  }
+
+  onModuleInit() {
+    this.bus.subscribe('budget', this.handleBudgetMessage.bind(this));
+  }
+
+  handleBudgetMessage(message: WsEvent<BudgetDto>, userId: string) {
+    const handler = async (message: WsEvent<BudgetDto>) => {
+      console.log('handled month message in BudgetService');
+      if (message.operation === Types.CREATE) {
+        const budget = plainToInstance(Budget, message.payload);
+        budget.months?.forEach(month => {
+          month.userId = userId;
+          month.shortCode = _.camelCase(month.name);
+          month.startingBalance = 0;
+          month.closingBalance = 0;
+        });
+        if (budget.months?.length > 0) {
+          budget.months[0].started = true;
+        }
+        await this.create(userId, 'api', budget);
+      } else if (message.operation === Types.UPDATE) {
+        await this.update(
+          userId,
+          'api',
+          message.payload.id,
+          plainToInstance(Budget, message.payload),
+        );
+      } else if (message.operation === Types.DELETE) {
+        this.delete(userId, 'api', message.payload.id);
+      }
+    };
+    handler(message);
   }
 
   override getDefaultRelations(): Record<string, any> {
@@ -51,7 +86,7 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
   }
 
   async list(userId: string): Promise<BudgetSummaryDto[]> {
-    const budgets = await this.budgetRepo.findBy({ userId});
+    const budgets = await this.budgetRepo.findBy({ userId });
     return budgets.map((b) => {
       return {
         id: b.id,

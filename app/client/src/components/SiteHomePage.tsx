@@ -1,4 +1,5 @@
 import { WS_URL } from "@/config";
+import BudgetWizard from "./BudgetWizard";
 
 export default function SiteHomePage() {
   return (
@@ -12,6 +13,9 @@ export default function SiteHomePage() {
         <a href={`${WS_URL}/auth/google`} className="px-6 py-3 bg-blue-600 text-white text-lg rounded-xl shadow hover:bg-blue-700 transition">
           Sign in
         </a>
+      </div>
+      <div>
+        <BudgetWizard></BudgetWizard>
       </div>
     </div>
   );
