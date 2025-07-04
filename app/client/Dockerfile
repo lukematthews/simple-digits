@@ -2,6 +2,10 @@
 FROM node:22 AS builder
 
 WORKDIR /app
+
+ARG VITE_API_HTTP_URL
+ENV VITE_API_HTTP_URL=$VITE_API_HTTP_URL
+
 COPY ./package*.json ./
 RUN npm install
 
