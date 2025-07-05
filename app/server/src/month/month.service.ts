@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Month } from './month.entity';
@@ -17,6 +17,8 @@ import { isValid } from 'date-fns';
 
 @Injectable()
 export class MonthService extends BaseEntityService<Month, MonthDto> {
+  private readonly logger = new Logger(MonthService.name);
+
   constructor(
     @InjectRepository(Month)
     private monthRepo: Repository<Month>,
@@ -55,7 +57,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
 
   handleMonthMessage(message: WsEvent<MonthDto>, userId: string) {
     const handler = async (message: WsEvent<MonthDto>) => {
-      console.log('handled month message in MonthService');
+      this.logger.log('handled month message in MonthService');
       if (message.operation === Types.UPDATE) {
         await this.update(
           userId,
@@ -93,9 +95,9 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
   @OnEvent('*.update')
   @OnEvent('*.delete')
   handleAllEntityChanges(payload: any) {
-    console.log(
-      `MonthService Handled internal event: ${JSON.stringify(payload)}`,
-    );
+    // this.logger.log(
+    //   `MonthService Handled internal event: ${JSON.stringify(payload)}`,
+    // );
   }
 
   async getMonthAtPosition(userId: string, position: number) {

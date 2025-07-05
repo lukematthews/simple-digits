@@ -1,21 +1,24 @@
-import { Injectable } from '@nestjs/common';
-import { Transaction } from './transaction.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { Month } from '../month/month.entity';
-import { TransactionDto } from './dto/transaction.dto.';
 import { BaseEntityService, WsEvent } from '@/common/base-entity.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { WsEventBusService } from '@/events/ws-event-bus.service';
 import { Types } from '@/Constants';
+import { WsEventBusService } from '@/events/ws-event-bus.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { Repository } from 'typeorm';
+import { Month } from '../month/month.entity';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { TransactionDto } from './dto/transaction.dto.';
+import { Transaction } from './transaction.entity';
 
 @Injectable()
 export class TransactionService extends BaseEntityService<
   Transaction,
   TransactionDto
 > {
+
+  private readonly logger = new Logger(TransactionService.name);
+
   constructor(
     @InjectRepository(Transaction)
     private transactionRepo: Repository<Transaction>,
@@ -45,7 +48,7 @@ export class TransactionService extends BaseEntityService<
 
   handleTransactionMessage(message: WsEvent<TransactionDto>, userId: string) {
     const handler = async (message: WsEvent<TransactionDto>) => {
-      console.log('handled transaction message in TransactionService');
+      this.logger.log('handled transaction message in TransactionService');
       if (message.operation === Types.CREATE) {
         await this.create(userId, 'api', {
           description: message.payload.description,

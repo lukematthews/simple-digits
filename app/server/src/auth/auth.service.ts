@@ -41,7 +41,6 @@ export class AuthService {
   }
 
   verifyToken(token: string): JwtPayload {
-    console.log(this.config.get('JWT_ACCESS_SECRET'));
     try {
       const payload = this.jwt.verify(token, {
         secret: this.config.get('JWT_ACCESS_SECRET'),

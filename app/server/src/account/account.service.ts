@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from './account.entity';
 import { Repository } from 'typeorm';
@@ -12,6 +12,8 @@ import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class AccountService extends BaseEntityService<Account, AccountDto> {
+   private readonly logger = new Logger(AccountService.name);
+
   constructor(
     @InjectRepository(Account)
     repo: Repository<Account>,
@@ -46,7 +48,7 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
 
   handleAccountMessage(message: WsEvent<AccountDto>, userId: string) {
     const handler = async (message: WsEvent<AccountDto>) => {
-      console.log('handled transaction message in AccountService');
+      this.logger.log('handled transaction message in AccountService');
       if (message.operation === Types.CREATE) {
         await this.create(userId, 'api', {
           name: message.payload.name,

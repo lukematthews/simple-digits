@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from './budget.entity';
 import { Repository } from 'typeorm';
@@ -16,6 +16,7 @@ import _ from "lodash";
 
 @Injectable()
 export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
+  private readonly logger: Logger = new Logger(BudgetService.name);
   constructor(
     @InjectRepository(Budget)
     private budgetRepo: Repository<Budget>,
@@ -33,7 +34,7 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
 
   handleBudgetMessage(message: WsEvent<BudgetDto>, userId: string) {
     const handler = async (message: WsEvent<BudgetDto>) => {
-      console.log('handled month message in BudgetService');
+      this.logger.log('handled month message in BudgetService');
       if (message.operation === Types.CREATE) {
         const budget = plainToInstance(Budget, message.payload);
         budget.months?.forEach(month => {
