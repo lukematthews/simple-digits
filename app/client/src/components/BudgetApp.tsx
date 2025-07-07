@@ -151,7 +151,7 @@ export default function BudgetApp() {
           </Button>
         </TabsList>
         {budget.months.map((month) => (
-          <MonthTabContent key={"" + month.id} month={month} startingBalance={month.startingBalance} />
+          <MonthTabContent key={"" + month.id} month={month} />
         ))}
       </Tabs>
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
