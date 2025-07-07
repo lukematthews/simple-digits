@@ -2,9 +2,9 @@ import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Cookies } from '@/common/decorators/cookies.decorator';
-import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { User } from '@/user/user.entity';
-import { GetUser } from '@/common/decorators/get-user.decorator';
+import { GetUser } from '@/auth/decorators/get-user.decorator';
 
 @Controller('auth')
 export class AuthController {

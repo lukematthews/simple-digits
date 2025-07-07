@@ -13,12 +13,13 @@ import { WsEventBusService } from './ws-event-bus.service';
 import { Transaction } from '@/transaction/transaction.entity';
 import { WsEvent } from '@/common/base-entity.service';
 import { AuthService } from '@/auth/auth.service';
-import { UnauthorizedException } from '@nestjs/common';
+import { Logger, UnauthorizedException } from '@nestjs/common';
 
 @WebSocketGateway({ cors: true })
 export class EventsGateway implements OnGatewayInit, OnGatewayConnection  {
   @WebSocketServer()
   server: Server;
+  private readonly logger = new Logger(EventsGateway.name);
 
   constructor(
     private readonly bus: WsEventBusService,
@@ -42,7 +43,7 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection  {
         parseCookie(client.handshake.headers.cookie)?.access_token;
 
       if (!token) {
-        console.warn('No token found in connection');
+        this.logger.warn('No token found in connection');
         return;
       }
 
@@ -53,10 +54,10 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection  {
         client.emit('auth_error', { message: error.message });
         client.disconnect();
       } else {
-        console.error('Unexpected error verifying token:', error);
+        this.logger.error('Unexpected error verifying token:', error);
         client.disconnect();
       }
-      console.error('WebSocket connection error:', error);
+      this.logger.error('WebSocket connection error:', error);
       client.disconnect(true);
     }
   }
@@ -67,7 +68,7 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection  {
     @ConnectedSocket() client: Socket,
   ) {
     if (!data?.entity) return;
-    console.log(
+    this.logger.log(
       `received budgetEvent message - dispatching on bus: ${JSON.stringify(data)}`,
     );
     this.bus.dispatch(data.entity, data, client);

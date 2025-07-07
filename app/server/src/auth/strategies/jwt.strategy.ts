@@ -9,7 +9,7 @@ import { UserService } from '@/user/user.service';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly config: ConfigService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([

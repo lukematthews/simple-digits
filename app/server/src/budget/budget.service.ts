@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from './budget.entity';
 import { Repository } from 'typeorm';
@@ -12,7 +12,10 @@ import { WsEventBusService } from '@/events/ws-event-bus.service';
 import { plainToInstance } from 'class-transformer';
 import { MonthSummary } from './dto/MonthSummary.dto';
 import { Types } from '@/Constants';
-import _ from "lodash";
+import _ from 'lodash';
+import { Account } from '@/account/account.entity';
+import { Transaction } from '@/transaction/transaction.entity';
+import { BudgetAccessService } from './budget-access.service';
 
 @Injectable()
 export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
@@ -22,7 +25,11 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     private budgetRepo: Repository<Budget>,
     @InjectRepository(Month)
     private monthRepo: Repository<Month>,
+    @InjectRepository(Account) private accountRepo: Repository<Account>,
+    @InjectRepository(Transaction) private transactionRepo: Repository<Transaction>,
     eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => BudgetAccessService))
+    private budgetAccessService: BudgetAccessService,
     bus: WsEventBusService,
   ) {
     super(budgetRepo, eventEmitter, 'month', bus, BudgetDto);
@@ -37,7 +44,7 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
       this.logger.log('handled month message in BudgetService');
       if (message.operation === Types.CREATE) {
         const budget = plainToInstance(Budget, message.payload);
-        budget.months?.forEach(month => {
+        budget.months?.forEach((month) => {
           month.userId = userId;
           month.shortCode = _.camelCase(month.name);
           month.startingBalance = 0;
@@ -81,13 +88,18 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
         },
       },
     });
-    return plainToInstance(BudgetDto, budget, {
+    const dto = plainToInstance(BudgetDto, budget, {
       excludeExtraneousValues: true,
     });
+    dto.userRole = await this.budgetAccessService.getUserRole(userId, id);
+    return dto;
   }
 
   async list(userId: string): Promise<BudgetSummaryDto[]> {
-    const budgets = await this.budgetRepo.findBy({ userId });
+    const budgets = await this.budgetRepo.find({
+      relations: ['members'],
+      where: { members: { userId: userId } },
+    });
     return budgets.map((b) => {
       return {
         id: b.id,
@@ -120,5 +132,40 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
       shortCode: budget.shortCode,
       months: [],
     });
+  }
+
+  async findBudgetByMonthId(monthId: number): Promise<Budget> {
+    const month = await this.monthRepo.findOne({
+      where: { id: monthId },
+      relations: ['budget'],
+    });
+
+    if (!month || !month.budget) {
+      throw new NotFoundException(`Budget not found for month ${monthId}`);
+    }
+
+    return month.budget;
+  }
+
+  async findBudgetByAccountId(accountId: number): Promise<Budget> {
+    const account = this.accountRepo.findOne({
+      where: { id: accountId },
+      relations: ['month', 'month.budget'],
+    });
+
+    return await this.findBudgetByMonthId((await account).month.budget.id);
+  }
+
+  async findBudgetByTransactionId(txnId: number): Promise<Budget> {
+    const txn = await this.transactionRepo.findOne({
+      where: { id: txnId },
+      relations: ['month', 'month.budget'],
+    });
+
+    const budget = txn?.month?.budget;
+    if (!budget) {
+      throw new NotFoundException(`Budget not found for transaction ${txnId}`);
+    }
+    return budget;
   }
 }

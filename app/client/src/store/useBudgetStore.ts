@@ -1,7 +1,7 @@
 // store/useBudgetStore.ts
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
-import { Budget, BudgetSummary, Month, Transaction, Account } from "@/types";
+import { Budget, BudgetSummary, Month, Transaction, Account, Role } from "@/types";
 import { WS_URL } from "@/config";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
 import { calculateMonthBalances } from "@/lib/monthUtils";
@@ -23,6 +23,9 @@ type BudgetSlice = {
   setCurrentBudget: (b: Budget) => void;
   loadBudgets: () => Promise<void>;
   loadBudgetById: (id: string) => Promise<void>;
+  accessMap: Record<string, Role>;
+  setAccess: (budgetId: string, role: Role) => void;
+  hasRole: (budgetId: string, allowed: Role[]) => boolean;
 };
 
 type TransactionSlice = {
@@ -151,6 +154,16 @@ export const useBudgetStore = create<Store>()(
         } finally {
           set({ isBudgetLoading: false });
         }
+      },
+
+      setAccess: (budgetId, role) => {
+        set((state) => ({
+          accessMap: { ...state.accessMap, [budgetId]: role },
+        }));
+      },
+      hasRole: (budgetId, allowed) => {
+        const role = get().accessMap[budgetId];
+        return allowed.includes(role);
       },
 
       // ─── Transaction Slice ────────────────────────────────

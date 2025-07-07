@@ -119,10 +119,16 @@ export default function BudgetApp() {
 
   return (
     <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">{budget?.name}</h1>
-        <ProfileMenu />
-      </div>
+      <div className="flex justify-between items-center px-6 py-4">
+        {/* Left: Budget Name */}
+        <div>{budget?.name && <h1 className="text-xl font-bold text-gray-700">{budget.name}</h1>}</div>
+
+        {/* Right: App Name + Profile */}
+        <div className="flex items-center gap-x-4">
+          <h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2>
+          <ProfileMenu />
+        </div>
+      </div>{" "}
       <Tabs
         value={activeMonth}
         onValueChange={(id) => {
@@ -148,7 +154,6 @@ export default function BudgetApp() {
           <MonthTabContent key={"" + month.id} month={month} startingBalance={month.startingBalance} />
         ))}
       </Tabs>
-
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent>
           <DialogHeader>

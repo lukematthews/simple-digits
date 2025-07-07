@@ -14,10 +14,12 @@ import { BaseEntityService, WsEvent } from '@/common/base-entity.service';
 import { WsEventBusService } from '@/events/ws-event-bus.service';
 import { camelCase } from 'lodash';
 import { isValid } from 'date-fns';
+import { BudgetAccessService } from '@/budget/budget-access.service';
 
 @Injectable()
 export class MonthService extends BaseEntityService<Month, MonthDto> {
   private readonly logger = new Logger(MonthService.name);
+  private readonly budgetAccessService: BudgetAccessService;
 
   constructor(
     @InjectRepository(Month)
@@ -28,8 +30,10 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
     private transactionService: TransactionService,
     eventEmitter: EventEmitter2,
     bus: WsEventBusService,
+    budgetAccessService: BudgetAccessService,
   ) {
     super(monthRepo, eventEmitter, 'month', bus, MonthDto);
+    this.budgetAccessService = budgetAccessService;
   }
 
   onModuleInit() {
@@ -56,20 +60,26 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
   }
 
   handleMonthMessage(message: WsEvent<MonthDto>, userId: string) {
-    const handler = async (message: WsEvent<MonthDto>) => {
+    if (message.operation === Types.CREATE) {
+      return;
+    }
+
+    (async (message: WsEvent<MonthDto>) => {
       this.logger.log('handled month message in MonthService');
+      const month = plainToInstance(Month, message.payload);
+
+      await this.budgetAccessService.assertHasRole(
+        userId,
+        { monthId: month.id },
+        ['OWNER', 'EDITOR'],
+      );
+
       if (message.operation === Types.UPDATE) {
-        await this.update(
-          userId,
-          'api',
-          message.payload.id,
-          plainToInstance(Month, message.payload),
-        );
+        await this.update(userId, 'api', month.id, month);
       } else if (message.operation === Types.DELETE) {
-        this.delete(userId, 'api', message.payload.id);
+        await this.delete(userId, 'api', month.id);
       }
-    };
-    handler(message);
+    })(message);
   }
 
   handleMonthCreateMessage(
@@ -77,18 +87,23 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
       month: CreateMonthDto;
       options: { copyAccounts: boolean };
     }>,
-    userId: string
+    userId: string,
   ) {
-    const handler = async (message: any) => {
+    (async (message: any) => {
       if (message.operation === Types.CREATE) {
+        const month = plainToInstance(Month, message.payload);
+        await this.budgetAccessService.assertHasRole(
+          userId,
+          { monthId: month.id },
+          ['OWNER', 'EDITOR'],
+        );
         await this.createWithOptions(
           userId,
           message.payload.month,
           message.payload.options,
         );
       }
-    };
-    handler(message);
+    })(message);
   }
 
   @OnEvent('*.create')

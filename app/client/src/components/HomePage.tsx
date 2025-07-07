@@ -3,6 +3,7 @@ import { useBudgetStore } from "@/store/useBudgetStore";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BudgetWizard from "./BudgetWizard";
+import { ProfileMenu } from "./ProfileMenu";
 
 export default function HomePage() {
   const { budgetSummaries, loadBudgetSummaries } = useBudgetStore();
@@ -17,8 +18,14 @@ export default function HomePage() {
   return (
     <>
       <div className="min-h-screen bg-gray-100 flex flex-col">
+        <div className="flex justify-end items-center px-6 py-4">
+          <div className="flex items-center gap-x-4">
+            <h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2>
+            <ProfileMenu />
+          </div>
+        </div>
         <div className="flex-1 flex items-end justify-center pb-12">
-          <h1 className="text-6xl font-serif font-bold text-gray-800 text-center">Budgets</h1>
+          <h1 className="text-6xl font-serif font-bold text-gray-800 text-center">Your Budgets</h1>
         </div>
 
         {!isLoggedIn && (
@@ -55,13 +62,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <div className="mt-6">
-            <BudgetWizard onCancel={() => setShowWizard(false)} />
-          </div>
         </div>
-      </div>
-      <div className="mt-6">
-        <BudgetWizard onCancel={() => setShowWizard(false)} />
       </div>
     </>
   );

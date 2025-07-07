@@ -18,4 +18,8 @@ export class AccountDto {
   @Expose()
   @Transform(({ obj }) => String(obj.month?.id))
   monthId: string;
+
+  @Expose()
+  @Transform(({ obj }) => String(obj.month?.budget?.id))
+  budgetId: string;
 }

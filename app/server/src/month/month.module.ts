@@ -6,9 +6,10 @@ import { MonthController } from './month.controller';
 import { Month } from './month.entity';
 import { TransactionModule } from '@/transaction/transaction.module';
 import { AccountModule } from '@/account/account.module';
+import { BudgetModule } from '@/budget/budget.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Month]), TransactionModule, forwardRef(() => AccountModule), forwardRef(() => EventsModule)],
+  imports: [TypeOrmModule.forFeature([Month]), TransactionModule, forwardRef(() => AccountModule), forwardRef(() => EventsModule), BudgetModule],
   providers: [MonthService],
   controllers: [MonthController],
   exports: [MonthService],

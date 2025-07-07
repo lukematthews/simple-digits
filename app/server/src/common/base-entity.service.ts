@@ -143,8 +143,6 @@ export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
 
   async findAll(userId: string): Promise<Dto[]> {
     const entities = await this.repo.findBy({ userId } as any);
-    console.log(`entities ${JSON.stringify(entities)}`);
-    console.log(`dtoClass: ${this.dtoClass}`);
     return entities.map((entity) => this.toDto(entity));
   }
 }
