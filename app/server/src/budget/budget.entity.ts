@@ -1,5 +1,6 @@
 import { Account } from '@/account/account.entity';
 import { OwnedEntity } from '@/common/owned.entity';
+import { BudgetInvite } from '@/invites/entities/budget-invite.entity';
 import { Month } from '@/month/month.entity';
 import { Transaction } from '@/transaction/transaction.entity';
 import { User } from '@/user/user.entity';
@@ -12,6 +13,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { BudgetMember } from './budget-member.entity';
 
 @Entity()
 export class Budget implements OwnedEntity {
@@ -36,4 +38,10 @@ export class Budget implements OwnedEntity {
     eager: true,
   })
   months: Month[];
+
+  @OneToMany(() => BudgetMember, (member) => member.budget)
+  members: BudgetMember[];
+
+  @OneToMany(() => BudgetInvite, (invite) => invite.budget, { cascade: true })
+  invites: BudgetInvite[];
 }

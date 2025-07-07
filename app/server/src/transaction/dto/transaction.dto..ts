@@ -21,8 +21,14 @@ export class TransactionDto {
   @Transform(({ obj }) => String(obj.month?.id))
   monthId: string;
 
+  // @Expose()
+  // get month() {
+  //   return this.monthId ? { id: +this.monthId } : undefined;
+  // }
+
   @Expose()
-  get month() {
-    return this.monthId ? { id: +this.monthId } : undefined;
-  }
+  @Transform(({ obj }) =>
+    obj.month ? { id: String(obj.month.id) } : undefined,
+  )
+  month?: { id: string };
 }

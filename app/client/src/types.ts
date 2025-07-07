@@ -42,6 +42,8 @@ export type BudgetSummary = {
   shortCode: string;
 };
 
+export type Role = 'OWNER' | 'EDITOR' | 'VIEWER';
+
 export interface MonthControlProps {
   months: Month[];
   setMonths: React.Dispatch<React.SetStateAction<Month[]>>;

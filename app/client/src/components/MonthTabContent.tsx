@@ -5,7 +5,6 @@ import TransactionList from "./TransactionListWrapper";
 import { Month } from "@/types";
 
 type Props = {
-  startingBalance: number;
   month: Month;
 };
 

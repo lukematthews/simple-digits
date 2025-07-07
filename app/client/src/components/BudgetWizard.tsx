@@ -33,8 +33,12 @@ interface MonthItem {
   to?: Date;
 }
 
+type Props = {
+  onCancel: () => void;
+};
+
 /** Main Component */
-const BudgetWizard: React.FC = () => {
+export default function BudgetWizard({ onCancel }: Props) {
   const navigate = useNavigate();
 
   // ─── Settings Form ────────────────────────────────
@@ -110,9 +114,8 @@ const BudgetWizard: React.FC = () => {
   return (
     <Card className="max-w-2xl mx-auto mt-10 p-8 space-y-6">
       <CardContent className="space-y-6">
-        {/* Step 1 – Budget Settings */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Budget Settings</h2>
+          <h2 className="text-xl font-semibold">Create a budget</h2>
           <div>
             <label className="block text-sm font-medium mb-1">Name</label>
             <Input {...register("name", { required: true })} placeholder="e.g. 2025 Family Budget" />
@@ -160,6 +163,7 @@ const BudgetWizard: React.FC = () => {
             ))}
             <Button onClick={addMonthRow}>+ Add Month</Button>
             <div className="pt-6 flex justify-end">
+              <Button onClick={onCancel}>Cancel</Button>
               <Button onClick={onFinish}>Finish</Button>
             </div>
           </div>
@@ -168,5 +172,3 @@ const BudgetWizard: React.FC = () => {
     </Card>
   );
 };
-
-export default BudgetWizard;

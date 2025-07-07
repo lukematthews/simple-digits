@@ -1,21 +1,26 @@
-import { Injectable } from '@nestjs/common';
-import { Transaction } from './transaction.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { Month } from '../month/month.entity';
-import { TransactionDto } from './dto/transaction.dto.';
 import { BaseEntityService, WsEvent } from '@/common/base-entity.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { WsEventBusService } from '@/events/ws-event-bus.service';
 import { Types } from '@/Constants';
+import { WsEventBusService } from '@/events/ws-event-bus.service';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { Repository } from 'typeorm';
+import { Month } from '../month/month.entity';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { TransactionDto } from './dto/transaction.dto.';
+import { Transaction } from './transaction.entity';
+import { BudgetAccessService } from '@/budget/budget-access.service';
+import { Budget } from '@/budget/budget.entity';
 
 @Injectable()
 export class TransactionService extends BaseEntityService<
   Transaction,
   TransactionDto
 > {
+  private readonly logger = new Logger(TransactionService.name);
+  private readonly budgetAccessService: BudgetAccessService;
+
   constructor(
     @InjectRepository(Transaction)
     private transactionRepo: Repository<Transaction>,
@@ -23,8 +28,10 @@ export class TransactionService extends BaseEntityService<
     private monthRepo: Repository<Month>,
     eventEmitter: EventEmitter2,
     bus: WsEventBusService,
+    budgetAccessService: BudgetAccessService,
   ) {
     super(transactionRepo, eventEmitter, 'transaction', bus, TransactionDto);
+    this.budgetAccessService = budgetAccessService;
   }
 
   onModuleInit() {
@@ -44,9 +51,17 @@ export class TransactionService extends BaseEntityService<
   }
 
   handleTransactionMessage(message: WsEvent<TransactionDto>, userId: string) {
-    const handler = async (message: WsEvent<TransactionDto>) => {
-      console.log('handled transaction message in TransactionService');
+    (async (message: WsEvent<TransactionDto>) => {
+      this.logger.log('handled transaction message in TransactionService');
+      try {
       if (message.operation === Types.CREATE) {
+        const transaction = plainToInstance(Transaction, message.payload);
+        await this.budgetAccessService.assertHasRole(
+          userId,
+          { transactionId: transaction.id },
+          ['OWNER', 'EDITOR'],
+        );
+
         await this.create(userId, 'api', {
           description: message.payload.description,
           userId: userId,
@@ -56,6 +71,13 @@ export class TransactionService extends BaseEntityService<
           month: { id: Number(message.payload.monthId) },
         });
       } else if (message.operation === Types.UPDATE) {
+        const transaction = plainToInstance(Transaction, message.payload);
+        await this.budgetAccessService.assertHasRole(
+          userId,
+          { transactionId: transaction.id },
+          ['OWNER', 'EDITOR'],
+        );
+
         await this.update(
           userId,
           'api',
@@ -68,10 +90,17 @@ export class TransactionService extends BaseEntityService<
           }),
         );
       } else if (message.operation === Types.DELETE) {
-        this.delete(userId, 'api', Number(message.payload.id));
+        const transaction = plainToInstance(Transaction, message.payload);
+          await this.budgetAccessService.assertHasRole(
+            userId,
+            { transactionId: transaction.id },
+            ['OWNER', 'EDITOR'],
+          );
+
+          this.delete(userId, 'api', Number(message.payload.id));
       }
-    };
-    handler(message);
+    } catch (e) {}
+    })(message);
   }
 
   async createTransactions(
@@ -107,7 +136,7 @@ export class TransactionService extends BaseEntityService<
         date: t.date,
         paid: t.paid,
         month,
-        userId: userId
+        userId: userId,
       });
 
       transactionDtos.push(plainToInstance(TransactionDto, newTransaction));
@@ -122,15 +151,20 @@ export class TransactionService extends BaseEntityService<
     };
   }
 
-  async addTransaction(month: Month, userId: string, transaction: CreateTransactionDto) {
+  async addTransaction(
+    month: Month,
+    userId: string,
+    transaction: CreateTransactionDto,
+  ) {
     const created = await this.transactionRepo.save({
       amount: transaction.amount,
       date: transaction.date,
       description: transaction.description,
       paid: transaction.paid,
       month: month,
-      userId
+      userId,
     });
     return created;
   }
+
 }

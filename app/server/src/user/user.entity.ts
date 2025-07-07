@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { BudgetMember } from '@/budget/budget-member.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -13,4 +14,7 @@ export class User {
 
   @Column({ nullable: true })
   picture?: string;
+
+  @OneToMany(() => BudgetMember, member => member.user)
+budgetMemberships: BudgetMember[];
 }

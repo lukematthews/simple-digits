@@ -16,4 +16,7 @@ export class BudgetDto {
   @Expose()
   @Type(() => MonthDto)
   months: MonthDto[];
+
+  @Expose()
+  userRole: 'OWNER' | 'EDITOR' | 'VIEWER';
 }
