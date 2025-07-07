@@ -44,6 +44,14 @@ app/server/node_modules
 /app/server/.env.production.local
 /app/server/.env.local
 
+# dotenv environment variable files
+/app/client/.env
+/app/client/.env.development.local
+/app/client/.env.test.local
+/app/client/.env.production.local
+/app/client/.env.local
+
+
 # temp directory
 /app/server/.temp
 /app/server/.tmp

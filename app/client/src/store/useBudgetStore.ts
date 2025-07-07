@@ -43,7 +43,7 @@ type AccountSlice = {
   deleteAccount: (accountId: string, monthId: string) => void;
 };
 
-type Store = BudgetSummarySlice & BudgetSlice & TransactionSlice & MonthSlice & AccountSlice;
+type Store = BudgetSummarySlice & BudgetSlice & TransactionSlice & MonthSlice & AccountSlice & { reset: () => void };
 
 export function populateMonthIds(budget: Budget): Budget {
   const updatedMonths = budget.months.map((month) => {
@@ -70,6 +70,10 @@ export function populateMonthIds(budget: Budget): Budget {
   };
 }
 
+export const resetAllStores = () => {
+  useBudgetStore.getState().reset();
+};
+
 export const useBudgetStore = create<Store>()(
   subscribeWithSelector(
     devtools((set, get) => ({
@@ -89,13 +93,27 @@ export const useBudgetStore = create<Store>()(
       },
       loadBudgetSummaries: async () => {
         try {
-          console.log(`API: ${WS_URL + "/budget/list"}`);
-          const res = await fetch(WS_URL + "/budget/list");
-          if (!res.ok) throw new Error("Failed to load budgets");
+          const res = await fetch(WS_URL + "/budget/list", {
+            method: "GET",
+            credentials: "include",
+          });
+
+          if (res.status === 401 || res.status === 500) {
+            // Unauthorized or server error — redirect to home
+            window.location.href = "/";
+            return;
+          }
+
+          if (!res.ok) {
+            throw new Error("Failed to load budgets");
+          }
+
           const data: BudgetSummary[] = await res.json();
           set({ budgetSummaries: data });
         } catch (err) {
           console.error("Error loading budgets:", err);
+          // Fallback redirect (e.g., network failure)
+          window.location.href = "/";
         }
       },
       loadBudgets: async () => {
@@ -111,9 +129,21 @@ export const useBudgetStore = create<Store>()(
       loadBudgetById: async (id) => {
         set({ isBudgetLoading: true });
         try {
-          const res = await fetch(`${WS_URL}/budget/${id}`);
+          const res = await fetch(`${WS_URL}/budget/${id}`, { method: "GET", credentials: "include" });
+
           if (!res.ok) throw new Error("Failed to load budget");
-          const budget: Budget = populateMonthIds(await res.json());
+
+          const rawBudget: Budget = await res.json();
+
+          // Sort months by position
+          const sortedBudget: Budget = {
+            ...rawBudget,
+            months: rawBudget.months
+              .slice() // clone to avoid mutating original
+              .sort((a, b) => a.position - b.position),
+          };
+
+          const budget = populateMonthIds(sortedBudget);
           document.title = budget.name;
           set({ currentBudget: budget });
         } catch (err) {
@@ -311,6 +341,14 @@ export const useBudgetStore = create<Store>()(
               months: updatedMonths,
             },
           };
+        }),
+      reset: () =>
+        set({
+          budgets: [],
+          budgetSummaries: [],
+          currentBudget: undefined,
+          currentBudgetSummary: undefined,
+          isBudgetLoading: false,
         }),
     }))
   )

@@ -15,6 +15,8 @@ import { TransactionController } from './transaction/transaction.controller';
 import { BudgetController } from './budget/budget.controller';
 
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -61,6 +63,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       wildcard: true,
       delimiter: '.',
     }),
+    AuthModule,
+    UserModule
   ],
   controllers: [
     AccountController,

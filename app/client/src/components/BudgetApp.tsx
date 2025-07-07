@@ -14,6 +14,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { calculateMonthBalances } from "@/lib/monthUtils";
 import { v4 as uuid } from "uuid";
+import { ProfileMenu } from "./ProfileMenu";
 
 export default function BudgetApp() {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export default function BudgetApp() {
         // Optionally fallback to latest month
         const latest = budget.months.reduce((a, b) => (a.position > b.position ? a : b));
         if (latest) {
-          navigate(`/${shortCode}/${latest.shortCode}`, { replace: true });
+          navigate(`/b/${shortCode}/${latest.shortCode}`, { replace: true });
         }
       }
     }
@@ -88,10 +89,10 @@ export default function BudgetApp() {
     const name = formMonth.trim();
     if (!name) return;
     const id = uuid();
-    const previousMonth = budget?.months.find((m) => selectedMonth === ""+m.id);
+    const previousMonth = budget?.months.find((m) => selectedMonth === "" + m.id);
     socket.emit("budgetEvent", {
       source: "frontend",
-      entity: "month.create",
+      entity: "month",
       operation: "create",
       id: id,
       payload: {
@@ -102,7 +103,7 @@ export default function BudgetApp() {
           name: name,
           started: formStarted,
           position: previousMonth?.position ? previousMonth.position + 1 : (budget?.months?.length ?? 0 + 1),
-          budget: budget?.id
+          budget: budget?.id,
         },
       },
     });
@@ -118,14 +119,17 @@ export default function BudgetApp() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">{budget?.name}</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">{budget?.name}</h1>
+        <ProfileMenu />
+      </div>
       <Tabs
         value={activeMonth}
         onValueChange={(id) => {
           setActiveMonth(id);
           const month = budget?.months.find((m) => `monthtab-${m.id}` === id);
           if (month) {
-            navigate(`/${shortCode}/${month.shortCode}`);
+            navigate(`/b/${shortCode}/${month.shortCode}`);
             document.title = `${budget.name}: ${month.name}`;
           }
         }}

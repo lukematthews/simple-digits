@@ -70,11 +70,6 @@ export default function MonthDetail({ month }: Props) {
   return (
     <div>
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 mb-2">
-          <h2 className="text-xl font-bold">{month.name}</h2>
-        </div>
-
-        {/* Started Checkbox */}
         <div className="flex items-center gap-2">
           <Checkbox checked={monthStarted} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
           <Label>Started</Label>

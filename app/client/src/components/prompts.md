@@ -69,17 +69,20 @@ Starting and closing balances should be stored against the month in state.
 
 
  
-
+Starting from 1/7/2025 and finishing on 31/1/2026
+budgetId: 1
+userId: c702a2ce-0bbb-4cee-8334-ff2a546faf77
+paid: false
 Create transactions for Macquarie on the first day every month for $7000
 Create transactions for Toorak on the 15th of every month for $-3708.70
 Create transactions for Woodleigh on the 20th of every month for $-6794.50
-Create transactions for Expenses weekly from 4/8/2025 for $-1037.57
-Create transactions for Luke fortnightly from 7/8/2025 for $5816.18
-Create transactions for Karen fortnightly from 12/8/2025 for $1680
-Create transactions for Luke Leave fortnightly from 7/8/2025 for $-894.80
-Create transactions for Bills weekly from 7/8/2025 for $-643.43
-Create transactions for Bills - Annual weekly from 7/8/2025 for $-184.12
-Create transactions for Bills - Boat weekly from 7/8/2025 for $-220.96
+Create transactions for Expenses weekly from 7/7/2025 for $-1037.57
+Create transactions for Luke fortnightly from 10/7/2025 for $5816.18
+Create transactions for Karen fortnightly from 1/7/2025 for $1680
+Create transactions for Luke Leave fortnightly from 10/7/2025 for $-894.80
+Create transactions for Bills weekly from 3/7/2025 for $-643.43
+Create transactions for Bills - Annual weekly from 3/7/2025 for $-184.12
+Create transactions for Bills - Boat weekly from 3/7/2025 for $-220.96
 
 
 Bills budget:
@@ -128,4 +131,109 @@ Change this component so that you can create / update / delete accounts.
 - There should be a Trash icon to delete the account
 
 
+
+Scaffold GPT prompts:
+
+# 💸 Budget App – ChatGPT Prompt Guide
+
+This guide provides curated prompts you can use with ChatGPT to assist in building a full-stack collaborative budget tracking app using:
+
+- **Frontend:** React + Vite + Tailwind + Zustand
+- **Backend:** NestJS + PostgreSQL + Passport.js (Google OAuth)
+- **Realtime:** WebSockets
+- **Deployment:** Railway or Docker
+
+---
+
+## ⚙️ Project Setup
+
+**Prompt:**
+> Create a monorepo budget app using Vite (React frontend), NestJS (backend), and PostgreSQL. Include Docker configuration to run everything locally. Organize the code with separate folders for `client/`, `server/`, and `database/`.
+
+---
+
+## 🔐 Google OAuth Authentication
+
+**Prompt:**
+> Set up Google OAuth2 login using Passport.js in NestJS. On successful login, issue access and refresh JWTs in HTTP-only cookies. Integrate with the frontend so the user stays authenticated across refreshes.
+
+---
+
+## 👥 User & Budget Sharing
+
+**Prompt:**
+> In a NestJS backend, implement user management with the ability to create, update, and share budgets between users. Each budget should store the list of user IDs with access, and allow one to be the owner.
+
+---
+
+## 🗃️ Data Model Design
+
+**Prompt:**
+> Define a relational data model in PostgreSQL for:  
+> - Users  
+> - Budgets  
+> - Months (each Budget has many Months)  
+> - Transactions (each Month has many Transactions)  
+> - Accounts (each Month has many Accounts)  
+>
+> Include foreign keys, timestamps, and basic validation.
+
+---
+
+## 🔁 WebSocket Sync
+
+**Prompt:**
+> Implement WebSocket-based real-time updates in a NestJS gateway. When a transaction is added/updated/deleted, broadcast it to all clients subscribed to that budget.
+
+---
+
+## ⚡ Zustand State Management
+
+**Prompt:**
+> Create a Zustand store in React to manage the current user, budgets, selected budget, months, transactions, and accounts. Add a `reset()` function to clear all state on logout.
+
+---
+
+## 💻 UI Layout (React + Tailwind)
+
+**Prompt:**
+> Build a responsive UI in React and Tailwind. Show a top nav bar with the current budget name on the left and a profile avatar on the right. Clicking the avatar shows a dropdown with shared budgets and a logout button.
+
+---
+
+## 📊 Balance Calculations
+
+**Prompt:**
+> Write a utility function in TypeScript that calculates:  
+> - Running balances for each transaction in a month  
+> - Starting and closing balances for each month  
+> Carry forward balances across months in order.
+
+---
+
+## 🗓 Recurring Transaction Generator
+
+**Prompt:**
+> Create a function that, given a start and end date, creates recurring transactions (weekly, fortnightly, monthly). Each transaction should include a description, date, amount, paid status, and account reference.
+
+---
+
+## 🔐 Auth Guards & Current User
+
+**Prompt:**
+> In a NestJS app, protect routes with `@UseGuards(AuthGuard('jwt'))`. Use a custom `@CurrentUser()` decorator to inject the currently authenticated user based on the access token from a cookie.
+
+---
+
+## 📬 Invite Links to Share Budgets
+
+**Prompt:**
+> Implement an invite link system to allow sharing a budget. The invite should be tied to a specific email, expire after 48 hours, and automatically add the user to the budget if they accept it.
+
+---
+
+## ✅ Bonus: Testing Strategy
+
+**Prompt:**
+> Suggest a testing approach for this budget app. Include unit tests for utility functions, integration tests for API endpoints using Supertest, and E2E tests using Playwright or Cypress.
 

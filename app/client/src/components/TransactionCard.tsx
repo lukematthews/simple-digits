@@ -101,8 +101,8 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
             onChange={(val) => {
               setAmount(val);
               setEditingAmount(false);
-              if (!isNew && amount !== transaction.amount) {
-                emitUpdate({ amount });
+              if (!isNew && val !== transaction.amount) {
+                emitUpdate({ amount: val });
               }
             }}
             placeholder="0.00"

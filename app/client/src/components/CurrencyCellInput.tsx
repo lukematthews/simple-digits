@@ -10,7 +10,6 @@ export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholde
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value.toString());
 
-  // Keep draft in sync when value changes externally
   useEffect(() => {
     if (!isEditing) {
       setDraft(value.toString());

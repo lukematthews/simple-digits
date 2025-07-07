@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { Client } from 'pg';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const testPg = async () => {
@@ -22,6 +23,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.use(cookieParser());
   const configService = app.get(ConfigService);
   const corsOriginsEnv = configService.get<string>('CORS_ORIGINS') ?? '';
   const allowedOrigins = corsOriginsEnv

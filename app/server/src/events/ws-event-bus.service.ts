@@ -1,7 +1,7 @@
 // events/ws-event-bus.service.ts
 import { Injectable } from '@nestjs/common';
 
-type MessageHandler = (data: any, client: any) => void;
+type MessageHandler = (data: any, userId: string) => void;
 
 @Injectable()
 export class WsEventBusService {
@@ -28,7 +28,7 @@ export class WsEventBusService {
   dispatch(message: string, data: any, client: any) {
     const handlers = this.handlers.get(message) ?? [];
     for (const handler of handlers) {
-      handler(data, client);
+      handler(data, client.data.userId);
     }
   }
 }
