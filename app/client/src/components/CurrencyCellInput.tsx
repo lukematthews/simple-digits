@@ -16,9 +16,7 @@ export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholde
     }
   }, [value, isEditing]);
 
-  const handleFocus = () => {
-    setIsEditing(true);
-  };
+  const handleFocus = () => setIsEditing(true);
 
   const handleBlur = () => {
     setIsEditing(false);
@@ -26,12 +24,16 @@ export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholde
     if (!isNaN(parsed)) {
       onChange(parsed);
     } else {
-      setDraft(value.toString()); // Revert to last valid
+      setDraft(value.toString()); // Revert to last valid value
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDraft(e.target.value);
+    const raw = e.target.value;
+    // Allow numbers, decimals, and minus
+    if (/^-?\d*\.?\d*$/.test(raw)) {
+      setDraft(raw);
+    }
   };
 
   const formatCurrency = (num: number) =>
@@ -45,6 +47,8 @@ export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholde
   return (
     <input
       type="text"
+      inputMode="decimal"
+      pattern="[0-9]*"
       value={isEditing ? draft : formatCurrency(value)}
       placeholder={placeholder}
       onChange={handleChange}
@@ -54,3 +58,5 @@ export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholde
     />
   );
 };
+
+export default CurrencyCellInput;

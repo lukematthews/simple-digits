@@ -59,24 +59,27 @@ export default function TransactionCardMobile({ transaction, isNew = false, onDo
           }}
         />
 
-        <input
-          type="date"
-          className="border p-2 rounded text-sm"
-          value={format(new Date(date), "yyyy-MM-dd")}
-          onChange={(e) => setDate(e.target.value)}
-          onBlur={() => {
-            if (!isNew && date !== transaction.date) emitUpdate({ date });
-          }}
-        />
-
-        <CurrencyCellInput
-          value={amount}
-          onChange={(val) => {
-            setAmount(val);
-            if (!isNew && val !== transaction.amount) emitUpdate({ amount: val });
-          }}
-          placeholder="0.00"
-        />
+        <div className="flex gap-2">
+          <input
+            type="date"
+            className="border p-2 rounded text-sm w-1/2"
+            value={format(new Date(date), "yyyy-MM-dd")}
+            onChange={(e) => setDate(e.target.value)}
+            onBlur={() => {
+              if (!isNew && date !== transaction.date) emitUpdate({ date });
+            }}
+          />
+          <div className="w-1/2">
+            <CurrencyCellInput
+              value={amount}
+              onChange={(val) => {
+                setAmount(val);
+                if (!isNew && val !== transaction.amount) emitUpdate({ amount: val });
+              }}
+              placeholder="0.00"
+            />
+          </div>
+        </div>
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -92,14 +95,18 @@ export default function TransactionCardMobile({ transaction, isNew = false, onDo
       </div>
 
       <div className="flex justify-between items-center">
-        <span className={`text-sm font-semibold ${transaction?.balance ?? 0 >= 0 ? "text-green-600" : "text-red-500"}`}>
+        <div className={`w-full text-sm font-semibold px-2 py-1 rounded ${(transaction?.balance ?? 0) >= 0 ? "bg-green-100" : "bg-red-100"} text-black text-center`}>
           {transaction?.balance?.toLocaleString("en-AU", { style: "currency", currency: "AUD" })}
-        </span>
+        </div>
         <div className="flex gap-2">
           {isNew ? (
             <>
-              <button className="text-green-600" onClick={emitCreate}><Check size={18} /></button>
-              <button className="text-red-500" onClick={() => onDiscard?.(transaction.id!)}><Trash2 size={18} /></button>
+              <button className="text-green-600" onClick={emitCreate}>
+                <Check size={18} />
+              </button>
+              <button className="text-red-500" onClick={() => onDiscard?.(transaction.id!)}>
+                <Trash2 size={18} />
+              </button>
             </>
           ) : (
             <button
