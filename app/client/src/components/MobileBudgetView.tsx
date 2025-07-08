@@ -1,11 +1,21 @@
 // src/components/MobileBudgetView.tsx
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
-import { Budget, Month, Transaction, WsEvent } from "@/types";
+import { Budget, Month, Transaction, Account, WsEvent } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
-import { socket } from "@/lib/socket";
 import TransactionCardMobile from "./TransactionCardMobile";
+import TransactionHeader from "./TransactionHeader";
+import { CurrencyCellInput } from "./CurrencyCellInput";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { v4 as uuid } from "uuid";
+import { socket } from "@/lib/socket";
+import { Link } from "react-router-dom";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
   const total = accounts.reduce((sum, a) => {
@@ -25,6 +35,12 @@ interface Props {
 
 export default function MobileBudgetView({ month, budget, onSelectMonth }: Props) {
   const [newTransaction, setNewTransaction] = useState<Transaction | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [formMonth, setFormMonth] = useState("");
+  const [formStarted, setFormStarted] = useState(false);
+  const [formCopyAccounts, setFormCopyAccounts] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+
   const updateMonth = useBudgetStore((s) => s.updateMonth);
   const monthFromStore = useBudgetStore((s) => s.currentBudget?.months.find((m) => String(m.id) === String(month?.id)));
   const transactions = monthFromStore?.transactions ?? [];
@@ -71,15 +87,102 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
     setNewTransaction(null);
   };
 
+  const handleAccountChange = (id: string, field: "name" | "balance", value: string | number) => {
+    if (!month) return;
+    const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
+    const updatedMonth = { ...month, accounts: updatedAccounts };
+    updateMonth(updatedMonth);
+
+    const account = updatedAccounts.find((a) => a.id === id);
+    if (account) {
+      const event: WsEvent<Account> = {
+        source: "frontend",
+        entity: "account",
+        operation: "update",
+        id: account.id!,
+        payload: account,
+      };
+      socket.emit("budgetEvent", event);
+    }
+  };
+
+  const handleAddMonth = () => {
+    const name = formMonth.trim();
+    if (!name) return;
+    const id = uuid();
+    const previousMonth = budget?.months.find((m) => selectedMonth === "" + m.id);
+    socket.emit("budgetEvent", {
+      source: "frontend",
+      entity: "month",
+      operation: "create",
+      id: id,
+      payload: {
+        options: {
+          copyAccounts: formCopyAccounts,
+        },
+        month: {
+          name: name,
+          started: formStarted,
+          position: previousMonth?.position ? previousMonth.position + 1 : (budget?.months?.length ?? 0 + 1),
+          budget: budget?.id,
+        },
+      },
+    });
+
+    setShowAddModal(false);
+    setFormMonth("");
+    setFormStarted(false);
+  };
+
   if (!month) return <div>No month selected</div>;
 
   return (
     <div className="h-screen flex flex-col bg-white">
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Month</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="Month Name" value={formMonth} onChange={(e) => setFormMonth(e.target.value)} />
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formStarted} onCheckedChange={(checked) => setFormStarted(Boolean(checked))} />
+              <Label>Started</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formCopyAccounts} onCheckedChange={(checked) => setFormCopyAccounts(Boolean(checked))} />
+              <Label>Copy accounts from previous month</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label>Previous month</Label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select a month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {budget.months.map((month) => (
+                    <SelectItem key={`month-select-${month.id}`} value={"" + month.id}>
+                      {month.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleAddMonth}>Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <header className="sticky top-0 z-10 bg-white shadow-sm px-4 py-3 space-y-3">
         <select
           className="w-full border rounded-md px-3 py-2 text-base"
           value={month.id}
           onChange={(e) => {
+            if (e.target.value === "add") return setShowAddModal(true);
             const m = budget.months.find((x) => x.id.toString() === e.target.value);
             if (m) onSelectMonth(m);
           }}
@@ -91,6 +194,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           ))}
           <option value="add">➕ Add Month</option>
         </select>
+
         <div className="flex justify-between text-center">
           <div className="w-1/2">
             <p className={`text-lg font-semibold px-2 py-1 rounded ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
@@ -106,7 +210,6 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </div>
         </div>
       </header>
-
       <main className="flex-1 overflow-y-auto px-4 pb-24">
         <details className="mb-4">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between">
@@ -115,21 +218,22 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </summary>
           <div className="space-y-2 mt-2">
             {month.accounts.map((a) => (
-              <div key={a.id} className="border rounded-md p-2 bg-gray-50 flex justify-between">
-                <span>{a.name}</span>
-                <span>{a.balance.toLocaleString("en-AU", { style: "currency", currency: "AUD" })}</span>
+              <div key={a.id} className="border rounded-md p-2 bg-gray-50 flex justify-between gap-2">
+                <input className="flex-1 border rounded px-2 py-1" value={a.name} onChange={(e) => handleAccountChange(a.id!, "name", e.target.value)} />
+                <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onChange={(v) => handleAccountChange(a.id!, "balance", v)} />
               </div>
             ))}
           </div>
         </details>
-        {/* Render existing transactions */}
+
         {transactions.map((txn) => (
           <TransactionCardMobile key={txn.id} transaction={txn} />
         ))}
-        {/* Render new transaction if present */}
-        {newTransaction && <TransactionCardMobile key={newTransaction.id} transaction={newTransaction} isNew onDiscard={() => setNewTransaction(null)} onDone={handleDone} />}{" "}
+        {newTransaction && <TransactionCardMobile key={newTransaction.id} transaction={newTransaction} isNew onDiscard={() => setNewTransaction(null)} onDone={handleDone} />}
       </main>
-
+      <Link to="/b" className="fixed bottom-6 left-6 w-[calc(100%-7.5rem)] text-center text-lg font-semibold px-6 py-3 rounded-xl bg-gray-100 text-gray-700 shadow-md">
+        Simple Digits
+      </Link>
       <button
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
         aria-label="Add Transaction"
