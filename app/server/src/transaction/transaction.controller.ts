@@ -51,7 +51,6 @@ export class TransactionController {
 
     return this.transactionService.createTransactions(
       budgetIdNum,
-      user.id,
       transactions,
     );
   }

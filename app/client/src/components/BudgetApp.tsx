@@ -1,39 +1,31 @@
+// src/components/BudgetApp.tsx
 import { useEffect, useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import MonthTabContent from "./MonthTabContent";
-import { socket } from "@/lib/socket";
 import { useParams, useNavigate } from "react-router-dom";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-
-import LoadingSpinner from "./LoadingSpinner";
-import { useBudgetStore } from "@/store/useBudgetStore";
+import { socket } from "@/lib/socket";
 import { calculateMonthBalances } from "@/lib/monthUtils";
-import { v4 as uuid } from "uuid";
-import { ProfileMenu } from "./ProfileMenu";
+import { useBudgetStore } from "@/store/useBudgetStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import MobileBudgetView from "./MobileBudgetView";
+import LoadingSpinner from "./LoadingSpinner";
+import DesktopBudgetView from "./DesktopBudgetView";
 
 export default function BudgetApp() {
   const navigate = useNavigate();
   const params = useParams<{ shortCode?: string; monthName?: string }>();
-  const shortCode = params.shortCode;
+  const shortCode = params.shortCode || "";
   const monthShortCode = params.monthName;
 
   const budgetSummaries = useBudgetStore((s) => s.budgetSummaries);
-  const getId = useBudgetStore((s) => s.getBudgetIdByShortCode);
-  const budget = useBudgetStore((s) => s.currentBudget);
-  const loadBudgetById = useBudgetStore((s) => s.loadBudgetById);
+  const getBudgetIdByShortCode = useBudgetStore((s) => s.getBudgetIdByShortCode);
   const loadBudgetSummaries = useBudgetStore((s) => s.loadBudgetSummaries);
+  const loadBudgetById = useBudgetStore((s) => s.loadBudgetById);
+  const budget = useBudgetStore((s) => s.currentBudget);
   const isBudgetLoading = useBudgetStore((s) => s.isBudgetLoading);
-  const [activeMonth, setActiveMonth] = useState<string | undefined>(undefined);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [formMonth, setFormMonth] = useState("");
-  const [formStarted, setFormStarted] = useState(false);
-  const [formCopyAccounts, setFormCopyAccounts] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const isMobile = useIsMobile();
+
+  const [activeMonthId, setActiveMonthId] = useState<string | null>(null);
+
+  const activeMonth = budget?.months.find((m) => m.id === activeMonthId) ?? null;
 
   useEffect(() => {
     if (budgetSummaries.length === 0) {
@@ -42,158 +34,49 @@ export default function BudgetApp() {
   }, []);
 
   useEffect(() => {
-    if (!budget) return;
+    if (!shortCode || budgetSummaries.length === 0) return;
+    const id = getBudgetIdByShortCode(shortCode);
+    if (id) loadBudgetById(id);
+  }, [shortCode, budgetSummaries]);
 
-    // calculate the month balances...
+  useEffect(() => {
+    if (!budget) return;
     calculateMonthBalances(budget.months);
 
     if (monthShortCode) {
-      const matchingMonth = budget.months.find((m) => m.shortCode === monthShortCode);
-      if (matchingMonth) {
-        setActiveMonth(`monthtab-${matchingMonth.id}`);
-      }
-    } else {
-      if (budget.months && budget.months.length > 0) {
-        // Optionally fallback to latest month
-        const latest = budget.months.reduce((a, b) => (a.position > b.position ? a : b));
-        if (latest) {
-          navigate(`/b/${shortCode}/${latest.shortCode}`, { replace: true });
-        }
-      }
+      const m = budget.months.find((x) => x.shortCode === monthShortCode);
+      if (m) setActiveMonthId(m.id);
+    } else if (budget.months.length > 0) {
+      const latest = budget.months.reduce((a, b) => (a.position > b.position ? a : b));
+      setActiveMonthId(latest.id);
+      navigate(`/b/${shortCode}/${latest.shortCode}`, { replace: true });
     }
   }, [budget, monthShortCode]);
 
-  useEffect(() => {
-    if (!shortCode || budgetSummaries.length === 0) return;
+  if (isBudgetLoading || !budget) return <LoadingSpinner />;
 
-    const id = getId(shortCode);
+  const onSelectMonth = (m: { id: string; shortCode: string, name: string }) => {
+    setActiveMonthId(m.id);
+    navigate(`/b/${shortCode}/${m.shortCode}`);
+    document.title = `${budget.name}: ${m.name}`;
+  };
 
-    if (id) {
-      (async () => {
-        await loadBudgetById(id);
-        // You can’t reliably read budget here
-        // Instead, react in another useEffect
-      })();
-    }
-  }, [shortCode, budgetSummaries, getId, loadBudgetById]);
-
-  if (!shortCode || isBudgetLoading) {
-    return <div>Loading budget...</div>;
-  }
-
-  if (!budget) {
-    return <div>Loading budget... Still no budget</div>;
-  }
-
-  function handleAddMonth() {
-    const name = formMonth.trim();
-    if (!name) return;
-    const id = uuid();
-    const previousMonth = budget?.months.find((m) => selectedMonth === "" + m.id);
+  const onCreateTransaction = (tx: { description: string; amount: number; date: string }) => {
     socket.emit("budgetEvent", {
       source: "frontend",
-      entity: "month",
+      entity: "transaction",
       operation: "create",
-      id: id,
+      id: "temp-" + Date.now(),
       payload: {
-        options: {
-          copyAccounts: formCopyAccounts,
-        },
-        month: {
-          name: name,
-          started: formStarted,
-          position: previousMonth?.position ? previousMonth.position + 1 : (budget?.months?.length ?? 0 + 1),
-          budget: budget?.id,
-        },
+        ...tx,
+        monthId: activeMonth?.id,
       },
     });
+  };
 
-    setShowAddModal(false);
-    setFormMonth("");
-    setFormStarted(false);
+  if (isMobile) {
+    return <MobileBudgetView budget={budget} month={activeMonth} onSelectMonth={onSelectMonth} onCreateTransaction={onCreateTransaction} />;
   }
 
-  if (!budget) {
-    return <LoadingSpinner />;
-  }
-
-  return (
-    <div className="p-4">
-      <div className="flex justify-between items-center px-6 py-4">
-        {/* Left: Budget Name */}
-        <div>{budget?.name && <h1 className="text-xl font-bold text-gray-700">{budget.name}</h1>}</div>
-
-        {/* Right: App Name + Profile */}
-        <div className="flex items-center gap-x-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2>
-          <ProfileMenu />
-        </div>
-      </div>{" "}
-      <Tabs
-        value={activeMonth}
-        onValueChange={(id) => {
-          setActiveMonth(id);
-          const month = budget?.months.find((m) => `monthtab-${m.id}` === id);
-          if (month) {
-            navigate(`/b/${shortCode}/${month.shortCode}`);
-            document.title = `${budget.name}: ${month.name}`;
-          }
-        }}
-      >
-        <TabsList>
-          {budget.months.map((month) => (
-            <TabsTrigger key={"monthtab-" + month.id} value={"monthtab-" + month.id} className="relative group text-xl rounded-xl">
-              {month.name}
-            </TabsTrigger>
-          ))}
-          <Button variant="outline" onClick={() => setShowAddModal(true)}>
-            + Add Month
-          </Button>
-        </TabsList>
-        {budget.months.map((month) => (
-          <MonthTabContent key={"" + month.id} month={month} startingBalance={month.startingBalance} />
-        ))}
-      </Tabs>
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Month</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input placeholder="Month Name" value={formMonth} onChange={(e) => setFormMonth(e.target.value)} />
-            <div className="flex items-center gap-2">
-              <Checkbox checked={formStarted} onCheckedChange={(checked) => setFormStarted(Boolean(checked))} />
-              <Label>Started</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox checked={formCopyAccounts} onCheckedChange={(checked) => setFormCopyAccounts(Boolean(checked))} />
-              <Label>Copy accounts from previous month</Label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Label>Previous month</Label>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select a month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {budget.months.map((month) => (
-                    <SelectItem key={`month-select-${month.id}`} value={"" + month.id}>
-                      {month.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleAddMonth}>Add</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+  return <DesktopBudgetView budget={budget} month={activeMonth} onSelectMonth={onSelectMonth} onCreateTransaction={onCreateTransaction} />;
 }

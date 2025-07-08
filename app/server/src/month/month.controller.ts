@@ -66,7 +66,6 @@ export class MonthController {
     @Body() body: Partial<UpdateMonthDto>,
   ) {
     return this.monthService.update(
-      user.id,
       'api',
       Number(id),
       instanceToPlain(body),
@@ -86,6 +85,6 @@ export class MonthController {
     @Param('id') id: number,
     @Body() body: CreateTransactionDto,
   ) {
-    return this.monthService.addTransaction(user.id, id, body);
+    return this.monthService.addTransaction(id, body);
   }
 }

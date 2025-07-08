@@ -41,7 +41,7 @@ export class AccountController {
     @CurrentUser() user: User,
     @Body() body: Partial<Account>,
   ) {
-    return this.accountService.update(user.id, 'api', Number(id), body);
+    return this.accountService.update('api', Number(id), body);
   }
 
   @Delete(':id')
