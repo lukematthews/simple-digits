@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuid } from "uuid";
@@ -41,6 +41,9 @@ type Props = {
 export default function BudgetWizard({ onCancel }: Props) {
   const navigate = useNavigate();
 
+  const userEditedShortCode = useRef(false);
+  const [autoShortCode, setAutoShortCode] = useState(true);
+
   // ─── Settings Form ────────────────────────────────
   const {
     register,
@@ -53,8 +56,10 @@ export default function BudgetWizard({ onCancel }: Props) {
   const nameWatch = watch("name");
   useEffect(() => {
     const auto = camelCase(nameWatch || "");
-    if (!watch("shortCode")) setValue("shortCode", auto, { shouldValidate: false });
-  }, [nameWatch]);
+    if (autoShortCode) {
+      setValue("shortCode", auto, { shouldValidate: false });
+    }
+  }, [nameWatch, autoShortCode]);
 
   // ─── Months State ─────────────────────────────────
   const [showMonths, setShowMonths] = useState(false);
@@ -122,19 +127,36 @@ export default function BudgetWizard({ onCancel }: Props) {
             {errors.name && <p className="text-red-500 text-xs mt-1">Name is required</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Short Code</label>
-            <Input {...register("shortCode")} placeholder="Auto‑generated" />
+            <label className="block text-sm font-medium mb-1 flex justify-between items-center">
+              <span>Short Code</span>
+              <label className="flex items-center gap-1 text-xs text-gray-600">
+                <input type="checkbox" checked={autoShortCode} onChange={() => setAutoShortCode((prev) => !prev)} />
+                Auto-generate
+              </label>
+            </label>
+            <Input
+              {...register("shortCode")}
+              placeholder="Auto‑generated"
+              readOnly={autoShortCode}
+              className={autoShortCode ? "bg-gray-100 cursor-not-allowed" : ""}
+              onChange={(e) => setValue("shortCode", e.target.value, { shouldValidate: true })}
+            />
           </div>
           {!showMonths && (
-            <div className="flex justify-between">
-              <Button disabled={!isValid} onClick={addMonthRow}>
-                Add Months
+            <div className="flex justify-between gap-2 pt-4">
+              <Button variant="outline" onClick={onCancel}>
+                Cancel
               </Button>
-              <Button disabled={!isValid} onClick={onFinish}>
-                Finish
-              </Button>
+              <div className="flex gap-2">
+                <Button disabled={!isValid} onClick={addMonthRow}>
+                  Add Months
+                </Button>
+                <Button disabled={!isValid} onClick={onFinish}>
+                  Finish
+                </Button>
+              </div>
             </div>
-          )}
+          )}{" "}
         </div>
 
         {/* Step 2 – Months */}
@@ -171,4 +193,4 @@ export default function BudgetWizard({ onCancel }: Props) {
       </CardContent>
     </Card>
   );
-};
+}

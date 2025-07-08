@@ -15,6 +15,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { v4 as uuid } from "uuid";
 import { socket } from "@/lib/socket";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useRef } from "react";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
   const total = accounts.reduce((sum, a) => {
@@ -43,6 +45,17 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
   const updateMonth = useBudgetStore((s) => s.updateMonth);
   const monthFromStore = useBudgetStore((s) => s.currentBudget?.months.find((m) => String(m.id) === String(month?.id)));
   const transactions = monthFromStore?.transactions ?? [];
+
+  const newTransactionRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (newTransaction) {
+      setTimeout(() => {
+        newTransactionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50); // slight delay to allow rendering
+    }
+  }, [newTransaction]);
 
   useEffect(() => {
     if (monthFromStore) {
@@ -176,7 +189,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <header className="sticky top-0 z-10 bg-white shadow-sm px-4 py-3 space-y-3">
+      <header className="sticky top-0 z-10 bg-blue-100 bg-opacity-80 shadow-sm px-4 py-3 space-y-3">
         <select
           className="w-full border rounded-md px-3 py-2 text-base"
           value={month.id}
@@ -209,7 +222,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </div>
         </div>
       </header>
-      <main className="flex-1 overflow-y-auto px-4 pb-24">
+      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 pb-24">
         <details className="mb-4">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between">
             <span>Accounts</span>
@@ -224,11 +237,21 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
             ))}
           </div>
         </details>
-
         {transactions.map((txn) => (
-          <TransactionCardMobile key={txn.id} transaction={txn} />
+          <TransactionCardMobile
+            key={txn.id}
+            transaction={txn}
+            isNew={newTransaction?.id === txn.id}
+            autoFocus={newTransaction?.id === txn.id}
+            onDiscard={() => setNewTransaction(null)}
+            onDone={handleDone}
+          />
         ))}
-        {newTransaction && <TransactionCardMobile key={newTransaction.id} transaction={newTransaction} isNew onDiscard={() => setNewTransaction(null)} onDone={handleDone} />}
+        {newTransaction && (
+          <motion.div ref={newTransactionRef} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+            <TransactionCardMobile key={newTransaction.id} transaction={newTransaction} isNew autoFocus onDiscard={() => setNewTransaction(null)} onDone={handleDone} />
+          </motion.div>
+        )}
       </main>
       <Link to="/b" className="fixed bottom-6 left-6 w-[calc(100%-7.5rem)] text-center text-lg font-semibold px-6 py-3 rounded-xl bg-gray-100 text-gray-700 shadow-md">
         Simple Digits
