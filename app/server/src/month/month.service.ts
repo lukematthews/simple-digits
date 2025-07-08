@@ -94,7 +94,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
         const month = plainToInstance(Month, message.payload);
         await this.budgetAccessService.assertHasRole(
           userId,
-          { monthId: month.id },
+          { budgetId: message.payload.month.budget },
           ['OWNER', 'EDITOR'],
         );
         await this.createWithOptions(
@@ -126,10 +126,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
     return month.accounts;
   }
 
-  async addTransaction(
-    id: number,
-    transaction: CreateTransactionDto,
-  ) {
+  async addTransaction(id: number, transaction: CreateTransactionDto) {
     const month = await this.monthRepo.findOneBy({ id: id });
     if (month) {
       transaction.month = id;
@@ -200,7 +197,6 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
               target: targetPosition,
               current: currentPosition,
             })
-            .andWhere('userId = :userId', { userId })
             .execute();
         }
 
@@ -227,23 +223,29 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
 
         const saved = await queryRunner.manager.save(newMonth);
 
-        // create accounts.
         if (options.copyAccounts && saved.position > 1) {
           const previousMonth = await this.monthRepo.findOne({
-            where: { position: saved.position - 1, userId },
+            where: { 
+              position: saved.position - 1, 
+              budget: {
+                id: monthData.budget.id
+              }
+            },
           });
-          const previousAccounts = await this.accountService.findByMonthId(
-            previousMonth.id,
-          );
-          await Promise.all(
-            previousAccounts.map((account) =>
-              this.accountService.create('api', {
-                name: account.name,
-                balance: account.balance,
-                month: saved,
-              }),
-            ),
-          );
+          if (previousMonth) {
+            const previousAccounts = await this.accountService.findByMonthId(
+              previousMonth.id,
+            );
+            await Promise.all(
+              previousAccounts.map((account) =>
+                this.accountService.create('api', {
+                  name: account.name,
+                  balance: account.balance,
+                  month: saved,
+                }),
+              ),
+            );
+          }
         }
 
         await queryRunner.commitTransaction();
