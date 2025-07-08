@@ -53,10 +53,10 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
         if (budget.months?.length > 0) {
           budget.months[0].started = true;
         }
-        await this.create(userId, 'api', budget);
+        budget.userId = userId;
+        await this.create('api', budget);
       } else if (message.operation === Types.UPDATE) {
         await this.update(
-          userId,
           'api',
           message.payload.id,
           plainToInstance(Budget, message.payload),
@@ -79,8 +79,9 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
   }
 
   async findBudget(userId: string, id: number) {
+    this.budgetAccessService.assertIsMember(userId, id);
     const budget = await this.budgetRepo.findOne({
-      where: { id, userId },
+      where: { id },
       relations: {
         months: {
           transactions: { month: true },
@@ -115,7 +116,7 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
       const months = await Promise.all(
         budget.months.map((dtoMonth) =>
           this.monthRepo.findOne({
-            where: { id: dtoMonth.id, user: { id: userId } },
+            where: { id: dtoMonth.id },
           }),
         ),
       );

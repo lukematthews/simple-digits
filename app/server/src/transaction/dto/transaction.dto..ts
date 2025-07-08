@@ -18,17 +18,10 @@ export class TransactionDto {
   paid!: boolean;
 
   @Expose()
-  @Transform(({ obj }) => String(obj.month?.id))
+  @Transform(({ obj, value }) => value ?? obj.month?.id?.toString())
   monthId: string;
 
-  // @Expose()
-  // get month() {
-  //   return this.monthId ? { id: +this.monthId } : undefined;
-  // }
-
   @Expose()
-  @Transform(({ obj }) =>
-    obj.month ? { id: String(obj.month.id) } : undefined,
-  )
+  @Transform(({ obj, value }) => value ?? (obj.monthId ? { id: obj.monthId.toString() } : undefined))
   month?: { id: string };
 }

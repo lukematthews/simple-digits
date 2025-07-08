@@ -14,13 +14,6 @@ export class Transaction implements OwnedEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user!: User;
-
-  @Column()
-  userId!: string;
-
   @Column()
   description!: string;
 

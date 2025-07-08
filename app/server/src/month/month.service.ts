@@ -1,20 +1,20 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Month } from './month.entity';
-import { CreateMonthDto } from './dto/create-month.dto';
-import { instanceToPlain, plainToInstance } from 'class-transformer';
-import { MonthDto } from './dto/month.dto';
-import { TransactionService } from '@/transaction/transaction.service';
-import { CreateTransactionDto } from '@/transaction/dto/create-transaction.dto';
 import { Types } from '@/Constants';
 import { AccountService } from '@/account/account.service';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { BudgetAccessService } from '@/budget/budget-access.service';
 import { BaseEntityService, WsEvent } from '@/common/base-entity.service';
 import { WsEventBusService } from '@/events/ws-event-bus.service';
-import { camelCase } from 'lodash';
+import { CreateTransactionDto } from '@/transaction/dto/create-transaction.dto';
+import { TransactionService } from '@/transaction/transaction.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { isValid } from 'date-fns';
-import { BudgetAccessService } from '@/budget/budget-access.service';
+import { camelCase } from 'lodash';
+import { Repository } from 'typeorm';
+import { CreateMonthDto } from './dto/create-month.dto';
+import { MonthDto } from './dto/month.dto';
+import { Month } from './month.entity';
 
 @Injectable()
 export class MonthService extends BaseEntityService<Month, MonthDto> {
@@ -75,7 +75,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
       );
 
       if (message.operation === Types.UPDATE) {
-        await this.update(userId, 'api', month.id, month);
+        await this.update('api', month.id, month);
       } else if (message.operation === Types.DELETE) {
         await this.delete(userId, 'api', month.id);
       }
@@ -127,7 +127,6 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
   }
 
   async addTransaction(
-    userId: string,
     id: number,
     transaction: CreateTransactionDto,
   ) {
@@ -136,7 +135,6 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
       transaction.month = id;
       const createdTransaction = await this.transactionService.addTransaction(
         month,
-        userId,
         transaction,
       );
       month.transactions.push(createdTransaction);
@@ -239,7 +237,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
           );
           await Promise.all(
             previousAccounts.map((account) =>
-              this.accountService.create(userId, 'api', {
+              this.accountService.create('api', {
                 name: account.name,
                 balance: account.balance,
                 month: saved,

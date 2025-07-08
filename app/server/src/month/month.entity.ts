@@ -17,10 +17,6 @@ export class Month implements OwnedEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user!: User;
-
   @Column({ nullable: true })
   userId!: string;
 

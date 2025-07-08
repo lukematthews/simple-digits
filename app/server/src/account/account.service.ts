@@ -61,7 +61,7 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
             { accountId: account.id },
             ['OWNER', 'EDITOR'],
           );
-          await this.create(userId, 'api', {
+          await this.create('api', {
             name: message.payload.name,
             balance: message.payload.balance,
             month: { id: Number(message.payload.monthId) },
@@ -74,7 +74,6 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
             ['OWNER', 'EDITOR'],
           );
           await this.update(
-            userId,
             'api',
             Number(message.payload.id),
             instanceToPlain(message.payload),

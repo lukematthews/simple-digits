@@ -1,8 +1,8 @@
-import { DeepPartial, Repository } from 'typeorm';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { emitAuditEvent } from '../audit/audit-emitter.util';
 import { WsEventBusService } from '@/events/ws-event-bus.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { plainToInstance } from 'class-transformer';
+import { DeepPartial, Repository } from 'typeorm';
+import { emitAuditEvent } from '../audit/audit-emitter.util';
 import { OwnedEntity } from './owned.entity';
 
 export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
@@ -26,8 +26,7 @@ export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
 
   protected abstract denormalizeDto(dto: Dto, entity: T): Dto;
 
-  async create(userId: string, actor: string, data: DeepPartial<T>): Promise<Dto> {
-    data.userId = userId;
+  async create(actor: string, data: DeepPartial<T>): Promise<Dto> {
     const entity = this.repo.create(data);
     const saved = await this.repo.save(entity);
     const reloaded = await this.repo.findOneOrFail({
@@ -54,13 +53,12 @@ export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
   }
 
   async update(
-    userId: string,
     actor: string,
     id: T['id'],
     updates: DeepPartial<T>,
   ): Promise<Dto> {
     const before = await this.repo.findOneOrFail({
-      where: { id, userId } as any,
+      where: { id } as any,
       relations: this.getDefaultRelations(),
     });
     const { id: _, ...safeUpdates } = updates as any;
