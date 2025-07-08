@@ -4,9 +4,17 @@ import { Plus } from "lucide-react";
 import { Budget, Month, Transaction, WsEvent } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
-import TransactionHeader from "./TransactionHeader";
 import { socket } from "@/lib/socket";
 import TransactionCardMobile from "./TransactionCardMobile";
+
+function sumAccountBalances(accounts: { balance: number | string }[]): string {
+  const total = accounts.reduce((sum, a) => {
+    const value = typeof a.balance === "string" ? parseFloat(a.balance) : a.balance;
+    return sum + (isNaN(value) ? 0 : value);
+  }, 0);
+
+  return total.toLocaleString("en-AU", { style: "currency", currency: "AUD" });
+}
 
 interface Props {
   month: Month | null;
@@ -103,7 +111,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
         <details className="mb-4">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between">
             <span>Accounts</span>
-            <span> {month.accounts.reduce((sum, a) => sum + (isNaN(parseFloat(a.balance)) ? 0 : parseFloat(a.balance)), 0).toLocaleString("en-AU", { style: "currency", currency: "AUD" })}</span>
+            <span>{sumAccountBalances(month.accounts)}</span>
           </summary>
           <div className="space-y-2 mt-2">
             {month.accounts.map((a) => (
