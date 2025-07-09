@@ -12,9 +12,10 @@ interface Props {
   isNew?: boolean;
   onDone?: (txn: Transaction) => void;
   onDiscard?: (id: string) => void;
+  autoFocus: boolean | undefined;
 }
 
-export default function TransactionCardMobile({ transaction, isNew = false, onDone, onDiscard }: Props) {
+export default function TransactionCardMobile({ transaction, isNew = false, onDone, onDiscard, autoFocus }: Props) {
   const [description, setDescription] = useState(transaction.description);
   const [date, setDate] = useState(transaction.date);
   const [paid, setPaid] = useState(transaction.paid);
@@ -52,6 +53,7 @@ export default function TransactionCardMobile({ transaction, isNew = false, onDo
         <input
           className="border p-2 rounded text-sm"
           placeholder="Description"
+          autoFocus={autoFocus}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={() => {

@@ -39,15 +39,6 @@ export default function HomePage() {
         {budgetSummaries.length === 0 && isLoggedIn && (
           <div className="text-center">
             <p className="text-gray-500 mb-4">No budgets found.</p>
-            {!showWizard ? (
-              <button className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition" onClick={() => setShowWizard(true)}>
-                Create budget...
-              </button>
-            ) : (
-              <div className="mt-6">
-                <BudgetWizard onCancel={() => setShowWizard(false)} />
-              </div>
-            )}
           </div>
         )}
 
@@ -63,6 +54,18 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+
+        {!showWizard ? (
+          <div className="text-center my-8">
+            <button className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition" onClick={() => setShowWizard(true)}>
+              Create budget...
+            </button>
+          </div>
+        ) : (
+          <div className="mt-6 px-6">
+            <BudgetWizard onCancel={() => setShowWizard(false)} />
+          </div>
+        )}
       </div>
     </>
   );

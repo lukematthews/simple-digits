@@ -1,4 +1,10 @@
-import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from './budget.entity';
 import { Repository } from 'typeorm';
@@ -16,6 +22,8 @@ import _ from 'lodash';
 import { Account } from '@/account/account.entity';
 import { Transaction } from '@/transaction/transaction.entity';
 import { BudgetAccessService } from './budget-access.service';
+import { BudgetMember } from './budget-member.entity';
+import { emitAuditEvent } from '@/audit/audit-emitter.util';
 
 @Injectable()
 export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
@@ -26,13 +34,16 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     @InjectRepository(Month)
     private monthRepo: Repository<Month>,
     @InjectRepository(Account) private accountRepo: Repository<Account>,
-    @InjectRepository(Transaction) private transactionRepo: Repository<Transaction>,
+    @InjectRepository(Transaction)
+    private transactionRepo: Repository<Transaction>,
+    @InjectRepository(BudgetMember)
+    private readonly budgetMemberRepo: Repository<BudgetMember>,
     eventEmitter: EventEmitter2,
     @Inject(forwardRef(() => BudgetAccessService))
     private budgetAccessService: BudgetAccessService,
     bus: WsEventBusService,
   ) {
-    super(budgetRepo, eventEmitter, 'month', bus, BudgetDto);
+    super(budgetRepo, eventEmitter, 'budget', bus, BudgetDto);
   }
 
   onModuleInit() {
@@ -66,6 +77,47 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
       }
     };
     handler(message);
+  }
+
+  override async create(actor: string, data: Partial<Budget>): Promise<any> {
+    const entity = this.budgetRepo.create(data);
+    const saved = await this.budgetRepo.save(entity);
+
+    if (!saved.userId) {
+      throw new Error('Budget must have a userId to create a BudgetMember.');
+    }
+
+    const budgetMember = this.budgetMemberRepo.create({
+      userId: saved.userId,
+      budgetId: saved.id,
+      role: 'OWNER',
+    });
+
+    await this.budgetMemberRepo.save(budgetMember);
+
+    const reloaded = await this.budgetRepo.findOneOrFail({
+      where: { id: saved.id },
+      relations: this.getDefaultRelations(),
+    });
+
+    emitAuditEvent({
+      eventEmitter: this.eventEmitter,
+      actor,
+      entity: 'budget',
+      entityId: saved.id,
+      operation: 'create',
+      after: saved,
+    });
+
+    this.emitSocketEvent({
+      source: 'api',
+      entity: 'budget',
+      operation: 'create',
+      id: saved.id,
+      payload: this.toDto(reloaded),
+    });
+
+    return this.toDto(reloaded);
   }
 
   override getDefaultRelations(): Record<string, any> {
