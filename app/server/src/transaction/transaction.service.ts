@@ -97,10 +97,17 @@ export class TransactionService extends BaseEntityService<
 
   async createTransactions(
     budgetId: number,
+    userId: string,
     transactions: CreateTransactionDto[],
   ) {
     const transactionDtos: TransactionDto[] = [];
     const unmatchedTransactions: CreateTransactionDto[] = [];
+
+    await this.budgetAccessService.assertHasRole(
+      userId,
+      { budgetId: budgetId },
+      ['OWNER', 'EDITOR'],
+    );
 
     // Load months only for the specified budget
     const allMonths = await this.monthRepo.find({

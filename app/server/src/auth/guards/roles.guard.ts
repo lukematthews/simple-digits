@@ -10,6 +10,7 @@ import { Request } from 'express';
 import { BudgetRole } from '@/auth/decorators/roles.decorator';
 import { JwtPayload } from '../types/jwt-payload';
 import { BudgetAccessService } from '@/budget/budget-access.service';
+import { User } from '@/user/user.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -27,7 +28,7 @@ export class RolesGuard implements CanActivate {
     if (!requiredRoles || requiredRoles.length === 0) return true;
 
     const req = ctx.switchToHttp().getRequest<Request>();
-    const user = req.user as JwtPayload;
+    const user = req.user as User;
     const budgetId =
       req.params.budgetId || req.body.budgetId || req.query.budgetId;
 
@@ -35,7 +36,11 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('budgetId not provided');
     }
 
-    await this.budgetAccessService.assertHasRole(user.sub, budgetId, requiredRoles);
+    await this.budgetAccessService.assertHasRole(
+      user.id,
+      { budgetId },
+      requiredRoles,
+    );
 
     return true;
   }
