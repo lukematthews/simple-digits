@@ -47,6 +47,7 @@ export class AccountController {
   @Delete(':id')
   @Roles('OWNER', 'EDITOR')
   delete(@Param('id') id: string, @CurrentUser() user: User) {
-    return this.accountService.delete(user.id, 'api', Number(id));
+    this.accountService.checkAccess(id, user.id);
+    return this.accountService.delete('api', +id);
   }
 }

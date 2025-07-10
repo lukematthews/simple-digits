@@ -89,7 +89,7 @@ export class TransactionService extends BaseEntityService<
           }),
         );
       } else if (message.operation === Types.DELETE) {
-        this.delete(userId, 'api', Number(message.payload.id));
+        this.delete('api', Number(message.payload.id));
       }
     })(message);
   }

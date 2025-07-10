@@ -59,8 +59,13 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
   handleBudgetMessage(message: WsEvent<BudgetDto>, userId: string) {
     const handler = async (message: WsEvent<BudgetDto>) => {
       this.logger.log('handled month message in BudgetService');
+      const budget = plainToInstance(Budget, message.payload);
+      await this.budgetAccessService.assertHasRole(userId, { budgetId: budget.id }, [
+        'OWNER',
+        'EDITOR',
+      ]);
+
       if (message.operation === Types.CREATE) {
-        const budget = plainToInstance(Budget, message.payload);
         budget.months?.forEach((month) => {
           month.userId = userId;
           month.shortCode = _.camelCase(month.name);
@@ -79,7 +84,7 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
           plainToInstance(Budget, message.payload),
         );
       } else if (message.operation === Types.DELETE) {
-        this.delete(userId, 'api', message.payload.id);
+        this.delete('api', message.payload.id);
       }
     };
     handler(message);

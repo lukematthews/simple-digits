@@ -75,7 +75,8 @@ export class MonthController {
   @Delete(':id')
   @Roles('OWNER', 'EDITOR')
   delete(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.monthService.delete(user.id, 'api', Number(id));
+    this.monthService.checkAccess(+id, user.id);
+    return this.monthService.delete('api', Number(id));
   }
 
   @Post(':id/transaction')

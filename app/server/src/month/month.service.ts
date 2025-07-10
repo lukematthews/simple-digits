@@ -83,7 +83,7 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
       if (message.operation === Types.UPDATE) {
         await this.update('api', month.id, month);
       } else if (message.operation === Types.DELETE) {
-        await this.delete(userId, 'api', month.id);
+        await this.delete('api', month.id);
       }
     })(message);
   }
@@ -110,6 +110,13 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
         );
       }
     })(message);
+  }
+
+  async checkAccess(id: number, userId: string) {
+    await this.budgetAccessService.assertHasRole(userId, { budgetId: id }, [
+      'OWNER',
+      'EDITOR',
+    ]);
   }
 
   @OnEvent('*.create')

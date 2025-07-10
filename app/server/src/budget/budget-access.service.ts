@@ -51,7 +51,7 @@ export class BudgetAccessService {
         budgetId = budget.id;
       } else if (target.transactionId) {
         const budget = await this.budgetService.findBudgetByTransactionId(
-          target.accountId,
+          target.transactionId,
         );
         budgetId = budget.id;
       }

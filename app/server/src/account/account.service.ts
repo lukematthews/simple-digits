@@ -59,42 +59,50 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
   handleAccountMessage(message: WsEvent<AccountDto>, userId: string) {
     (async (message: WsEvent<AccountDto>) => {
       this.logger.log('handled message in AccountService');
+      const account = plainToInstance(Account, message.payload);
+      if (
+        message.operation === Types.UPDATE ||
+        message.operation === Types.DELETE
+      ) {
+        await this.budgetAccessService.assertHasRole(
+          userId,
+          { accountId: account.id },
+          ['OWNER', 'EDITOR'],
+        );
+      } else if (message.operation === Types.CREATE) {
+        await this.budgetAccessService.assertHasRole(
+          userId,
+          { monthId: +message.payload.monthId },
+          ['OWNER', 'EDITOR'],
+        );
+      }
+
       try {
         if (message.operation === Types.CREATE) {
-          const account = plainToInstance(Account, message.payload);
-          await this.budgetAccessService.assertHasRole(
-            userId,
-            { monthId: +message.payload.monthId },
-            ['OWNER', 'EDITOR'],
-          );
           await this.create('api', {
             name: message.payload.name,
             balance: message.payload.balance,
             month: { id: Number(message.payload.monthId) },
           });
         } else if (message.operation === Types.UPDATE) {
-          const account = plainToInstance(Account, message.payload);
-          await this.budgetAccessService.assertHasRole(
-            userId,
-            { accountId: account.id },
-            ['OWNER', 'EDITOR'],
-          );
           await this.update(
             'api',
             Number(message.payload.id),
             instanceToPlain(message.payload),
           );
         } else if (message.operation === Types.DELETE) {
-          const account = plainToInstance(Account, message.payload);
-          await this.budgetAccessService.assertHasRole(
-            userId,
-            { accountId: account.id },
-            ['OWNER', 'EDITOR'],
-          );
-          this.delete(userId, 'api', Number(message.payload.id));
+          this.delete('api', Number(message.payload.id));
         }
       } catch (e) {}
     })(message);
+  }
+
+  async checkAccess(accountId: string, userId: string) {
+    await this.budgetAccessService.assertHasRole(
+      userId,
+      { accountId: +accountId },
+      ['OWNER', 'EDITOR'],
+    );
   }
 
   async findByMonthId(id: number) {

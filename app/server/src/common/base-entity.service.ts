@@ -88,11 +88,11 @@ export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
     return this.toDto(saved);
   }
 
-  async delete(userId: string, actor: string, id: T['id']): Promise<void> {
+  async delete(actor: string, id: T['id']): Promise<void> {
     const relations = this.getDefaultRelations();
 
     const entity = await this.repo.findOneOrFail({
-      where: { id, userId } as any,
+      where: { id } as any,
       relations,
     });
     await this.repo.remove(entity);
