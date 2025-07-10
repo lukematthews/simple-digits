@@ -27,7 +27,6 @@ import { emitAuditEvent } from '@/audit/audit-emitter.util';
 
 @Injectable()
 export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
-  private readonly logger: Logger = new Logger(BudgetService.name);
   constructor(
     @InjectRepository(Budget)
     private budgetRepo: Repository<Budget>,
@@ -43,7 +42,14 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     private budgetAccessService: BudgetAccessService,
     bus: WsEventBusService,
   ) {
-    super(budgetRepo, eventEmitter, 'budget', bus, BudgetDto);
+    super(
+      budgetRepo,
+      eventEmitter,
+      'budget',
+      bus,
+      BudgetDto,
+      new Logger(BudgetService.name),
+    );
   }
 
   onModuleInit() {

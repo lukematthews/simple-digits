@@ -17,7 +17,6 @@ export class TransactionService extends BaseEntityService<
   Transaction,
   TransactionDto
 > {
-  private readonly logger = new Logger(TransactionService.name);
   private readonly budgetAccessService: BudgetAccessService;
 
   constructor(
@@ -29,7 +28,7 @@ export class TransactionService extends BaseEntityService<
     bus: WsEventBusService,
     budgetAccessService: BudgetAccessService,
   ) {
-    super(transactionRepo, eventEmitter, 'transaction', bus, TransactionDto);
+    super(transactionRepo, eventEmitter, 'transaction', bus, TransactionDto, new Logger(TransactionService.name));
     this.budgetAccessService = budgetAccessService;
   }
 

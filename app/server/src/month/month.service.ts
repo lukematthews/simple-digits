@@ -18,7 +18,6 @@ import { Month } from './month.entity';
 
 @Injectable()
 export class MonthService extends BaseEntityService<Month, MonthDto> {
-  private readonly logger = new Logger(MonthService.name);
   private readonly budgetAccessService: BudgetAccessService;
 
   constructor(
@@ -32,7 +31,14 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
     bus: WsEventBusService,
     budgetAccessService: BudgetAccessService,
   ) {
-    super(monthRepo, eventEmitter, 'month', bus, MonthDto);
+    super(
+      monthRepo,
+      eventEmitter,
+      'month',
+      bus,
+      MonthDto,
+      new Logger(MonthService.name),
+    );
     this.budgetAccessService = budgetAccessService;
   }
 
@@ -225,11 +231,11 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
 
         if (options.copyAccounts && saved.position > 1) {
           const previousMonth = await this.monthRepo.findOne({
-            where: { 
-              position: saved.position - 1, 
+            where: {
+              position: saved.position - 1,
               budget: {
-                id: monthData.budget.id
-              }
+                id: monthData.budget.id,
+              },
             },
           });
           if (previousMonth) {

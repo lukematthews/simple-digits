@@ -4,6 +4,7 @@ import { plainToInstance } from 'class-transformer';
 import { DeepPartial, Repository } from 'typeorm';
 import { emitAuditEvent } from '../audit/audit-emitter.util';
 import { OwnedEntity } from './owned.entity';
+import { Logger } from '@nestjs/common';
 
 export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
   protected constructor(
@@ -12,6 +13,7 @@ export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
     private readonly entityName: string,
     protected readonly bus?: WsEventBusService,
     protected readonly dtoClass?: new (...args: any[]) => Dto,
+    protected readonly logger: Logger = new Logger(BaseEntityService.name),
   ) {}
 
   protected toDto(entity: T): Dto {
@@ -115,8 +117,8 @@ export abstract class BaseEntityService<T extends OwnedEntity, Dto = T> {
 
   protected emitSocketEvent(event: WsEvent<Dto>) {
     if (this.bus) {
-      console.log(
-        `emitting event ${this.entityName}.${event.operation}: ${JSON.stringify(event)}`,
+      this.logger.log(
+        `emitting socket event message for ${this.entityName} - dispatching on bus: ${JSON.stringify(event)}`,
       );
       this.bus.emit('budgetEvent', event);
     }

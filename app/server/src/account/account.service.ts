@@ -13,7 +13,6 @@ import { BudgetAccessService } from '@/budget/budget-access.service';
 
 @Injectable()
 export class AccountService extends BaseEntityService<Account, AccountDto> {
-  private readonly logger = new Logger(AccountService.name);
   private readonly budgetAccessService: BudgetAccessService;
 
   constructor(
@@ -23,7 +22,14 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
     bus: WsEventBusService,
     budgetAccessService: BudgetAccessService,
   ) {
-    super(repo, eventEmitter, 'account', bus, AccountDto);
+    super(
+      repo,
+      eventEmitter,
+      'account',
+      bus,
+      AccountDto,
+      new Logger(AccountService.name),
+    );
     this.budgetAccessService = budgetAccessService;
   }
 
@@ -52,13 +58,13 @@ export class AccountService extends BaseEntityService<Account, AccountDto> {
 
   handleAccountMessage(message: WsEvent<AccountDto>, userId: string) {
     (async (message: WsEvent<AccountDto>) => {
-      this.logger.log('handled transaction message in AccountService');
+      this.logger.log('handled message in AccountService');
       try {
         if (message.operation === Types.CREATE) {
           const account = plainToInstance(Account, message.payload);
           await this.budgetAccessService.assertHasRole(
             userId,
-            { accountId: account.id },
+            { monthId: +message.payload.monthId },
             ['OWNER', 'EDITOR'],
           );
           await this.create('api', {
