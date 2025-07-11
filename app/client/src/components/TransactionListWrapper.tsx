@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import TransactionCard from "./TransactionCard";
 import { socket } from "@/lib/socket";
 import { Month, Transaction, WsEvent } from "@/types";
@@ -8,10 +8,11 @@ import TransactionHeader from "./TransactionHeader";
 
 interface Props {
   month: Month;
+  newTransaction: Transaction | null;
+  setNewTransaction: (t: Transaction | null) => void;
 }
 
-export default function TransactionList({ month }: Props) {
-  const [newTransaction, setNewTransaction] = useState<Transaction | null>(null);
+export default function TransactionList({ month, newTransaction, setNewTransaction }: Props) {
 
   const monthFromStore = useBudgetStore((s) => s.currentBudget?.months.find((m) => String(m.id) === String(month.id)));
   const transactions = monthFromStore?.transactions ?? [];
@@ -42,18 +43,6 @@ export default function TransactionList({ month }: Props) {
     };
   }, []);
 
-  const handleAdd = () => {
-    setNewTransaction({
-      id: "" + Date.now(), // temporary ID for React keying
-      description: "",
-      date: new Date().toISOString().slice(0, 10),
-      paid: false,
-      amount: 0,
-      balance: 0,
-      monthId: month.id,
-    });
-  };
-
   const handleDone = (txn: Transaction) => {
     const event: WsEvent<Transaction> = {
       source: "frontend",
@@ -83,11 +72,11 @@ export default function TransactionList({ month }: Props) {
 
       {newTransaction && <TransactionCard key={newTransaction.id} transaction={newTransaction} isNew onDiscard={() => setNewTransaction(null)} onDone={handleDone} />}
 
-      {!newTransaction && (
+      {/* {!newTransaction && (
         <button className="my-4 px-4 py-2 bg-blue-600 text-white rounded" onClick={handleAdd}>
           Add Transaction
         </button>
-      )}
+      )} */}
     </div>
   );
 }

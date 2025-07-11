@@ -9,9 +9,10 @@ import { format } from "date-fns";
 
 type Props = {
   month: Month;
+  onAddTransaction: () => void;
 };
 
-export default function MonthDetail({ month }: Props) {
+export default function MonthDetail({ month, onAddTransaction }: Props) {
   const [monthStarted, setMonthStarted] = useState<boolean>(month.started);
   const [fromDate, setFromDate] = useState<string>(month.fromDate ? format(new Date(month.fromDate), "yyyy-MM-dd") : "");
   const [toDate, setToDate] = useState<string>(month.toDate ? format(new Date(month.toDate), "yyyy-MM-dd") : "");
@@ -72,13 +73,10 @@ export default function MonthDetail({ month }: Props) {
       <div className="flex flex-col gap-3">
         {/* Row: Started + Dates */}
         <div className="flex items-center gap-6 mb-2">
-          {/* Started */}
           <div className="flex items-center gap-2">
             <Checkbox checked={monthStarted} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
             <Label>Started</Label>
           </div>
-
-          {/* Dates */}
           <div className="flex items-center gap-2">
             <Label>Dates</Label>
             <input type="date" className="border rounded px-2 py-1" value={fromDate} onChange={(e) => handleDateChange("fromDate", e.target.value)} />
@@ -88,7 +86,6 @@ export default function MonthDetail({ month }: Props) {
         </div>
 
         <div className="flex items-center gap-4 mb-2">
-          {/* Starting Balance */}
           <div className="flex items-center gap-2">
             <Label>Starting Balance</Label>
             <CurrencyInput
@@ -100,8 +97,6 @@ export default function MonthDetail({ month }: Props) {
               value={month.startingBalance}
             />
           </div>
-
-          {/* Closing Balance */}
           <div className="flex items-center gap-2">
             <Label>Closing Balance</Label>
             <CurrencyInput
@@ -113,10 +108,7 @@ export default function MonthDetail({ month }: Props) {
               value={month.closingBalance}
             />
           </div>
-
-          {/* Add Transaction */}
-          {/* onClick={handleAdd} */}
-          <button className="ml-auto px-4 py-2 bg-blue-600 text-white rounded" >
+          <button className="ml-auto px-4 py-2 bg-blue-600 text-white rounded" onClick={onAddTransaction}>
             Add Transaction
           </button>
         </div>
