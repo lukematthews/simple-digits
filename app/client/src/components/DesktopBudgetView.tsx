@@ -65,9 +65,9 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center px-6 py-4">
+      <div className="flex justify-between items-center py-4">
         {/* Left: Budget Name */}
-        <div>{budget?.name && <h1 className="text-xl font-bold text-gray-700">{budget.name}</h1>}</div>
+        <div>{budget?.name && <h1 className="text-3xl font-bold text-gray-700">{budget.name}</h1>}</div>
 
         {/* Right: App Name + Profile */}
         <div className="flex items-center gap-x-4">

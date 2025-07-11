@@ -17,7 +17,7 @@ export default function MonthTabContent({ month }: Props) {
           <div className="p-2">
             <MonthDetail key={`month-detail-${month.id}`} month={month}></MonthDetail>
           </div>
-          <div className="flex-grow p-2">
+          <div className="flex-grow p-0 h-full">
             <TransactionList month={month}></TransactionList>
           </div>
         </div>

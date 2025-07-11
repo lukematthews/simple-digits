@@ -58,9 +58,9 @@ export default function MonthDetail({ month }: Props) {
         setFromDate(message.payload.fromDate ? format(new Date(message.payload.fromDate), "yyyy-MM-dd") : "");
         setToDate(message.payload.toDate ? format(new Date(message.payload.toDate), "yyyy-MM-dd") : "");
       }
-    }
+    };
 
-    socket.on("budgetEvent",  handleMessage);
+    socket.on("budgetEvent", handleMessage);
 
     return () => {
       socket.off("budgetEvent", handleMessage);
@@ -70,38 +70,55 @@ export default function MonthDetail({ month }: Props) {
   return (
     <div>
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <Checkbox checked={monthStarted} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
-          <Label>Started</Label>
+        {/* Row: Started + Dates */}
+        <div className="flex items-center gap-6 mb-2">
+          {/* Started */}
+          <div className="flex items-center gap-2">
+            <Checkbox checked={monthStarted} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
+            <Label>Started</Label>
+          </div>
+
+          {/* Dates */}
+          <div className="flex items-center gap-2">
+            <Label>Dates</Label>
+            <input type="date" className="border rounded px-2 py-1" value={fromDate} onChange={(e) => handleDateChange("fromDate", e.target.value)} />
+            <span>-</span>
+            <input type="date" className="border rounded px-2 py-1" value={toDate} onChange={(e) => handleDateChange("toDate", e.target.value)} />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-2">
-          <Label>Dates</Label>
-          <input
-            type="date"
-            className="border rounded px-2 py-1"
-            value={fromDate}
-            onChange={(e) => handleDateChange("fromDate", e.target.value)}
-          />
-          <span>-</span>
-          <input
-            type="date"
-            className="border rounded px-2 py-1"
-            value={toDate}
-            onChange={(e) => handleDateChange("toDate", e.target.value)}
-          />
-        </div>
+        <div className="flex items-center gap-4 mb-2">
+          {/* Starting Balance */}
+          <div className="flex items-center gap-2">
+            <Label>Starting Balance</Label>
+            <CurrencyInput
+              className={`border rounded px-2 py-1 ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}
+              disabled
+              fixedDecimalLength={2}
+              decimalScale={2}
+              intlConfig={{ locale: "en-AU", currency: "AUD" }}
+              value={month.startingBalance}
+            />
+          </div>
 
-        {/* Starting Balance */}
-        <div className="flex items-center gap-2">
-          <CurrencyInput className={`border rounded px-2 py-1 ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`} disabled fixedDecimalLength={2} decimalScale={2} intlConfig={{ locale: "en-AU", currency: "AUD" }} value={month.startingBalance} />
-          <Label>Starting Balance</Label>
-        </div>
+          {/* Closing Balance */}
+          <div className="flex items-center gap-2">
+            <Label>Closing Balance</Label>
+            <CurrencyInput
+              className={`border rounded px-2 py-1 ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}
+              disabled
+              fixedDecimalLength={2}
+              decimalScale={2}
+              intlConfig={{ locale: "en-AU", currency: "AUD" }}
+              value={month.closingBalance}
+            />
+          </div>
 
-        {/* Closing Balance */}
-        <div className="flex items-center gap-2">
-          <CurrencyInput className={`border rounded px-2 py-1 ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`} disabled fixedDecimalLength={2} decimalScale={2} intlConfig={{ locale: "en-AU", currency: "AUD" }} value={month.closingBalance} />
-          <Label>Closing Balance</Label>
+          {/* Add Transaction */}
+          {/* onClick={handleAdd} */}
+          <button className="ml-auto px-4 py-2 bg-blue-600 text-white rounded" >
+            Add Transaction
+          </button>
         </div>
       </div>
     </div>

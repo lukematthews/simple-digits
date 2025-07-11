@@ -72,15 +72,17 @@ export default function TransactionList({ month }: Props) {
   };
 
   return (
-    <div>
-      <button className="mb-4 px-4 py-2 bg-blue-600 text-white rounded" onClick={handleAdd}>
-        Add Transaction
-      </button>
-      <TransactionHeader />
+    <div className="flex flex-col h-full overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-white border-b">
+        <TransactionHeader />
+      </div>
+
       {transactions.map((txn) => (
         <TransactionCard key={txn.id} transaction={txn} />
       ))}
+
       {newTransaction && <TransactionCard key={newTransaction.id} transaction={newTransaction} isNew onDiscard={() => setNewTransaction(null)} onDone={handleDone} />}
+
       {!newTransaction && (
         <button className="my-4 px-4 py-2 bg-blue-600 text-white rounded" onClick={handleAdd}>
           Add Transaction
