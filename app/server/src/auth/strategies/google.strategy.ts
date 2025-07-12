@@ -25,6 +25,7 @@ export class GoogleStrategy extends PassportStrategy(
       prompt: 'select_account',
     };
   }
+  
   async validate(accessToken: string, refreshToken: string, profile: Profile) {
     const { emails, displayName, photos } = profile;
     return this.authService.validateOAuthLogin({

@@ -1,18 +1,33 @@
-import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Cookies } from '@/common/decorators/cookies.decorator';
-import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { User } from '@/user/user.entity';
 import { GetUser } from '@/auth/decorators/get-user.decorator';
+import { SignupDto } from './dto/signup.dto';
+import * as bcrypt from 'bcrypt';
+import { LoginDto } from './dto/login.dto';
+import { UserService } from '@/user/user.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private auth: AuthService) {}
+  constructor(
+    private auth: AuthService,
+    private userService: UserService,
+  ) {}
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  // passport redirects, nothing here
   google() {}
 
   @Get('google/callback')
@@ -61,5 +76,30 @@ export class AuthController {
       .clearCookie('access_token')
       .clearCookie('refresh_token', { path: '/auth/refresh' })
       .json({ ok: true });
+  }
+
+  @Post('check-email')
+  async checkEmail(@Query('email') email: string) {
+    const exists = await this.auth.emailExists(email);
+    return exists;
+  }
+
+  @Post('signup')
+  async signup(@Body() dto: SignupDto) {
+    const user = await this.auth.signup(dto);
+    return this.auth.login(user);
+  }
+
+  @Post('login')
+  async login(@Body() dto: LoginDto) {
+    const user = await this.userService.findByEmail(dto.email);
+    if (
+      !user ||
+      !user.passwordHash ||
+      !(await bcrypt.compare(dto.password, user.passwordHash))
+    ) {
+      throw new UnauthorizedException();
+    }
+    return this.auth.login(user);
   }
 }

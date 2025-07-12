@@ -1,4 +1,4 @@
-import { WS_URL } from "@/config";
+import { Link } from "react-router-dom";
 
 export default function SiteHomePage() {
   return (
@@ -15,12 +15,7 @@ export default function SiteHomePage() {
       </div>
 
       <div className="flex justify-center mb-6">
-        <a
-          href={`${WS_URL}/auth/google`}
-          className="px-6 py-3 bg-blue-600 text-white text-lg rounded-xl shadow hover:bg-blue-700 transition"
-        >
-          Sign in
-        </a>
+        <Link to={"/login"}>Login</Link>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { useSocketEvents } from "@/hooks/useSocketEvents";
 import HomePage from "./HomePage";
 import BudgetApp from "./BudgetApp";
 import SiteHomePage from "./SiteHomePage";
+import AuthFlow from "./AuthFlow";
 
 export function App() {
   useSocketEvents();
@@ -14,6 +15,7 @@ export function App() {
         <Route path="/b/:shortCode" element={<BudgetApp />} />
         <Route path="/b" element={<HomePage />} />
         <Route path="/" element={<SiteHomePage />} />
+        <Route path="/login" element={<AuthFlow />} />
       </Routes>
     </>
   );

@@ -15,6 +15,12 @@ export class User {
   @Column({ nullable: true })
   picture?: string;
 
-  @OneToMany(() => BudgetMember, member => member.user)
-budgetMemberships: BudgetMember[];
+  @OneToMany(() => BudgetMember, (member) => member.user)
+  budgetMemberships: BudgetMember[];
+
+  @Column({ nullable: true})
+  passwordHash?: string;
+
+  @Column({ nullable: true })
+  provider?: 'email' | 'google' | null;
 }
