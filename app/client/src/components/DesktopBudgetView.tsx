@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Budget, Month } from "@/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MonthTabContent from "./MonthTabContent";
@@ -20,7 +20,7 @@ type Props = {
 };
 
 export default function DesktopBudgetView({ budget, month, onSelectMonth }: Props) {
-  const [activeTab, setActiveTab] = useState<string>(month ? `monthtab-${month.id}` : "");
+  const [activeTab, setActiveTab] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [formMonth, setFormMonth] = useState("");
   const [formStarted, setFormStarted] = useState(false);
@@ -34,6 +34,12 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
       onSelectMonth({ id: m.id, shortCode: m.shortCode, name: m.name });
     }
   };
+
+  useEffect(() => {
+    if (month?.id) {
+      setActiveTab(`monthtab-${month.id}`);
+    }
+  }, [month?.id]);
 
   function handleAddMonth() {
     const name = formMonth.trim();
