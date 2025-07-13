@@ -1,5 +1,5 @@
 // src/components/BudgetApp.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { socket } from "@/lib/socket";
 import { calculateMonthBalances } from "@/lib/monthUtils";
@@ -39,23 +39,43 @@ export default function BudgetApp() {
     if (id) loadBudgetById(id);
   }, [shortCode, budgetSummaries]);
 
+  const hasSetInitialMonth = useRef(false);
+
   useEffect(() => {
-    if (!budget) return;
+    if (!budget || hasSetInitialMonth.current) return;
+
     calculateMonthBalances(budget.months);
 
     if (monthShortCode) {
       const m = budget.months.find((x) => x.shortCode === monthShortCode);
-      if (m) setActiveMonthId(m.id);
-    } else if (budget.months.length > 0) {
-      const latest = budget.months.reduce((a, b) => (a.position > b.position ? a : b));
-      setActiveMonthId(latest.id);
-      navigate(`/b/${shortCode}/${latest.shortCode}`, { replace: true });
+      if (m) {
+        setActiveMonthId(m.id);
+        hasSetInitialMonth.current = true;
+      }
+    } else {
+      // Filter to started months
+      const startedMonths = budget.months.filter((m) => m.started);
+
+      // Use started months if available, otherwise fall back to all months
+      const candidateMonths = startedMonths.length > 0 ? startedMonths : budget.months;
+
+      if (candidateMonths.length > 0) {
+        const latest = candidateMonths.reduce((a, b) => (a.position > b.position ? a : b));
+
+        setActiveMonthId(latest.id);
+        navigate(`/b/${shortCode}/${latest.shortCode}`, { replace: true });
+        hasSetInitialMonth.current = true;
+      }
     }
   }, [budget, monthShortCode]);
 
+  useEffect(() => {
+    hasSetInitialMonth.current = false;
+  }, [budget?.id]);
+
   if (isBudgetLoading || !budget) return <LoadingSpinner />;
 
-  const onSelectMonth = (m: { id: string; shortCode: string, name: string }) => {
+  const onSelectMonth = (m: { id: string; shortCode: string; name: string }) => {
     setActiveMonthId(m.id);
     navigate(`/b/${shortCode}/${m.shortCode}`);
     document.title = `${budget.name}: ${m.name}`;

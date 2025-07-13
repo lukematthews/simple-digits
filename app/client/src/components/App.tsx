@@ -4,6 +4,7 @@ import HomePage from "./HomePage";
 import BudgetApp from "./BudgetApp";
 import SiteHomePage from "./SiteHomePage";
 import AuthFlow from "./AuthFlow";
+import Layout from "./Layout";
 
 export function App() {
   useSocketEvents();
@@ -11,11 +12,13 @@ export function App() {
   return (
     <>
       <Routes>
-        <Route path="/b/:shortCode/:monthName" element={<BudgetApp />} />
-        <Route path="/b/:shortCode" element={<BudgetApp />} />
-        <Route path="/b" element={<HomePage />} />
-        <Route path="/" element={<SiteHomePage />} />
-        <Route path="/login" element={<AuthFlow />} />
+        <Route element={<Layout />}>
+          <Route path="/b/:shortCode/:monthName" element={<BudgetApp />} />
+          <Route path="/b/:shortCode" element={<BudgetApp />} />
+          <Route path="/b" element={<HomePage />} />
+          <Route path="/" element={<SiteHomePage />} />
+          <Route path="/login" element={<AuthFlow />} />{" "}
+        </Route>
       </Routes>
     </>
   );

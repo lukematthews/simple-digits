@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Budget, Month } from "@/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MonthTabContent from "./MonthTabContent";
-import { ProfileMenu } from "./ProfileMenu";
 import { socket } from "@/lib/socket";
 import { v4 as uuid } from "uuid";
 import { Button } from "@/components/ui/button";
@@ -71,17 +70,6 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center py-4">
-        {/* Left: Budget Name */}
-        <div>{budget?.name && <h1 className="text-3xl font-bold text-gray-700">{budget.name}</h1>}</div>
-
-        {/* Right: App Name + Profile */}
-        <div className="flex items-center gap-x-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2>
-          <ProfileMenu />
-        </div>
-      </div>
-
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           {budget.months.map((month) => (
