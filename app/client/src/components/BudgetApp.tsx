@@ -42,7 +42,7 @@ export default function BudgetApp() {
   const hasSetInitialMonth = useRef(false);
 
   useEffect(() => {
-    if (!budget || hasSetInitialMonth.current) return;
+    if (!budget || hasSetInitialMonth.current || budget.months.length === 0) return;
 
     calculateMonthBalances(budget.months);
 
@@ -53,10 +53,7 @@ export default function BudgetApp() {
         hasSetInitialMonth.current = true;
       }
     } else {
-      // Filter to started months
       const startedMonths = budget.months.filter((m) => m.started);
-
-      // Use started months if available, otherwise fall back to all months
       const candidateMonths = startedMonths.length > 0 ? startedMonths : budget.months;
 
       if (candidateMonths.length > 0) {
@@ -68,10 +65,10 @@ export default function BudgetApp() {
       }
     }
   }, [budget, monthShortCode]);
-
+  
   useEffect(() => {
     hasSetInitialMonth.current = false;
-  }, [budget?.id]);
+  }, [shortCode]);
 
   if (isBudgetLoading || !budget) return <LoadingSpinner />;
 

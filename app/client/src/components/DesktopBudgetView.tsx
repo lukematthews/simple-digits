@@ -40,6 +40,17 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
     }
   }, [month?.id]);
 
+  useEffect(() => {
+    if (!month && budget?.months?.length > 0) {
+      // Pick highest-position started month or fallback to latest
+      const startedMonths = budget.months.filter((m) => m.started);
+      const candidates = startedMonths.length > 0 ? startedMonths : budget.months;
+      const latest = candidates.reduce((a, b) => (a.position > b.position ? a : b));
+      onSelectMonth({ id: latest.id, shortCode: latest.shortCode, name: latest.name });
+      setActiveTab(`monthtab-${latest.id}`);
+    }
+  }, [budget.id, budget.months.length]);
+
   function handleAddMonth() {
     const name = formMonth.trim();
     if (!name) return;

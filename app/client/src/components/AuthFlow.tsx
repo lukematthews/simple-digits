@@ -116,6 +116,7 @@ export default function AuthFlow() {
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
           />
+          <p>Here's the rules: - Must be at least 6 characters - Must contain a digit - Must contain a special character</p>
           <Button className="w-full" onClick={handleSignup}>Sign up</Button>
         </>
       )}

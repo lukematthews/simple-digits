@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Post,
   Query,
   Req,
@@ -79,7 +80,10 @@ export class AuthController {
   }
 
   @Post('check-email')
-  async checkEmail(@Query('email') email: string) {
+  async checkEmail(@Body('email') email: string) {
+    if (!email) {
+      throw new NotFoundException('No email provided');
+    }
     const exists = await this.auth.emailExists(email);
     return exists;
   }

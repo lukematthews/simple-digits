@@ -21,7 +21,7 @@ export default function Layout() {
 
           {/* Right: App Name + Profile */}
           <div className="flex items-center gap-x-4">
-            <h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2>
+            <a href="/"><h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2></a>
             <ProfileMenu />
           </div>
         </div>
