@@ -16,9 +16,9 @@ export function App() {
           <Route path="/b/:shortCode/:monthName" element={<BudgetApp />} />
           <Route path="/b/:shortCode" element={<BudgetApp />} />
           <Route path="/b" element={<HomePage />} />
-          <Route path="/login" element={<AuthFlow />} />{" "}
         </Route>
         <Route path="/" element={<SiteHomePage />} />
+        <Route path="/login" element={<AuthFlow />} />{" "}
       </Routes>
     </>
   );
