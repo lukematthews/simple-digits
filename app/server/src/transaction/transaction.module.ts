@@ -8,9 +8,13 @@ import { Month } from '../month/month.entity';
 import { BudgetModule } from '@/budget/budget.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, Month]), forwardRef(() => EventsModule), BudgetModule],
+  imports: [
+    TypeOrmModule.forFeature([Transaction, Month]),
+    forwardRef(() => EventsModule),
+    BudgetModule,
+  ],
   controllers: [TransactionController],
   providers: [TransactionService],
-  exports: [TransactionService]
+  exports: [TransactionService],
 })
 export class TransactionModule {}

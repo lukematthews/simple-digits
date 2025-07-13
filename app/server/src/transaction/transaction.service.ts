@@ -28,7 +28,14 @@ export class TransactionService extends BaseEntityService<
     bus: WsEventBusService,
     budgetAccessService: BudgetAccessService,
   ) {
-    super(transactionRepo, eventEmitter, 'transaction', bus, TransactionDto, new Logger(TransactionService.name));
+    super(
+      transactionRepo,
+      eventEmitter,
+      'transaction',
+      bus,
+      TransactionDto,
+      new Logger(TransactionService.name),
+    );
     this.budgetAccessService = budgetAccessService;
   }
 

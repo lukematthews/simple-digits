@@ -18,7 +18,7 @@ export class User {
   @OneToMany(() => BudgetMember, (member) => member.user)
   budgetMemberships: BudgetMember[];
 
-  @Column({ nullable: true})
+  @Column({ nullable: true })
   passwordHash?: string;
 
   @Column({ nullable: true })
