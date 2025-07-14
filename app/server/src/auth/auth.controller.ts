@@ -4,7 +4,7 @@ import {
   Get,
   NotFoundException,
   Post,
-  Query,
+  Response,
   Req,
   Res,
   UnauthorizedException,
@@ -95,7 +95,7 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto) {
+  async login(@Body() dto: LoginDto,@Res({ passthrough: true }) res) {
     const user = await this.userService.findByEmail(dto.email);
     if (
       !user ||
@@ -104,6 +104,11 @@ export class AuthController {
     ) {
       throw new UnauthorizedException();
     }
-    return this.auth.login(user);
+    const jwt = this.auth.login(user);
+    res.cookie('access_token', (await jwt).access, {
+      httpOnly: true,
+      sameSite: 'lax',
+    });
+    return jwt;
   }
 }

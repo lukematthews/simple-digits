@@ -41,9 +41,9 @@ export default function AuthFlow() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post(WS_URL + '/auth/login', { email, password });
+      const res = await axios.post(WS_URL + '/auth/login', { email, password }, { withCredentials: true });
       console.log('Login successful', res.data);
-      // TODO: Store token in cookie/localStorage
+      window.location.href = '/b';
     } catch (err) {
       console.error('Login failed', err);
     }

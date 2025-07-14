@@ -8,7 +8,7 @@ export default function Layout() {
   const budget = useBudgetStore((s) => s.currentBudget);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-100">
       {/* Sticky Navbar */}
       <div className="sticky top-0 z-50 bg-white border-b shadow-sm px-4">
         <div className="flex justify-between items-center py-4 max-w-screen-xl mx-auto">
@@ -21,7 +21,7 @@ export default function Layout() {
 
           {/* Right: App Name + Profile */}
           <div className="flex items-center gap-x-4">
-            <a href="/"><h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2></a>
+            <a href="/b"><h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2></a>
             <ProfileMenu />
           </div>
         </div>
