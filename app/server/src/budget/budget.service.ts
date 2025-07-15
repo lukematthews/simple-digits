@@ -58,7 +58,7 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
 
   handleBudgetMessage(message: WsEvent<BudgetDto>, userId: string) {
     const handler = async (message: WsEvent<BudgetDto>) => {
-      this.logger.log('handled month message in BudgetService');
+      this.logger.log('handled budget message in BudgetService');
       const budget = plainToInstance(Budget, message.payload);
       await this.budgetAccessService.assertHasRole(userId, { budgetId: budget.id }, [
         'OWNER',
