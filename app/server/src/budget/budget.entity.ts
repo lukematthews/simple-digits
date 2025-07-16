@@ -46,4 +46,7 @@ export class Budget implements OwnedEntity {
 
   @OneToMany(() => BudgetInvite, (invite) => invite.budget, { cascade: true })
   invites: BudgetInvite[];
+
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
+  previousShortCodes: string[];
 }

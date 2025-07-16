@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Budget, Month } from "@/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MonthTabContent from "./MonthTabContent";
 import { socket } from "@/lib/socket";
 import { v4 as uuid } from "uuid";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import MonthTabContent from "./month/MonthTabContent";
 
 type Props = {
   budget: Budget;

@@ -84,10 +84,10 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
           { budgetId: budget.id },
           ['OWNER', 'EDITOR'],
         );
-        await this.update(
-          'api',
+        await this.updateBudget(
           message.payload.id,
           plainToInstance(Budget, message.payload),
+          userId,
         );
       } else if (message.operation === Types.DELETE) {
         this.delete('api', message.payload.id);
@@ -127,6 +127,39 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     });
 
     return this.toDto(reloaded);
+  }
+
+  async updateBudget(budgetId: number, data: Partial<Budget>, userId: string) {
+    const existing = await this.budgetRepo.findOneByOrFail({ id: budgetId });
+
+    if (existing.shortCode !== data.shortCode && data.shortCode) {
+      existing.previousShortCodes = [
+        ...(existing.previousShortCodes ?? []),
+        existing.shortCode,
+      ];
+      existing.shortCode = data.shortCode;
+    }
+
+    existing.name = data.name ?? existing.name;
+
+    const saved = await this.budgetRepo.save(existing);
+
+    emitAuditEvent({
+      eventEmitter: this.eventEmitter,
+      actor: 'api',
+      entity: 'budget',
+      entityId: saved.id,
+      operation: 'create',
+      after: saved,
+    });
+
+    this.emitSocketEvent({
+      source: 'api',
+      entity: 'budget',
+      operation: 'create',
+      id: saved.id,
+      payload: this.toDto(saved),
+    });
   }
 
   override getDefaultRelations(): Record<string, any> {

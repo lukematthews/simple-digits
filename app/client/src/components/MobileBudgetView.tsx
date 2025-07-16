@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Budget, Month, Transaction, Account, WsEvent } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
-import TransactionCardMobile from "./TransactionCardMobile";
+import TransactionCardMobile from "./transaction/TransactionCardMobile";
 import { CurrencyCellInput } from "./CurrencyCellInput";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

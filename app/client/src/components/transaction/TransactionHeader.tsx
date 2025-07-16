@@ -1,4 +1,4 @@
-import { Card, CardContent } from "./ui/card";
+import { Card, CardContent } from "../ui/card";
 
 // TransactionHeader.tsx
 export default function TransactionHeader() {
