@@ -83,7 +83,7 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
     <div className="p-4">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
-          {budget.months.map((month) => (
+          {budget.months?.map((month) => (
             <TabsTrigger key={month.id} value={`monthtab-${month.id}`} className="text-xl rounded-xl">
               {month.name}
             </TabsTrigger>

@@ -43,7 +43,7 @@ export default function HomePage() {
           </button>
         </div>
       ) : (
-        <div className="mt-6 px-6">
+        <div className="mt-6 px-6 my-8">
           <BudgetWizard onCancel={() => setShowWizard(false)} />
         </div>
       )}
