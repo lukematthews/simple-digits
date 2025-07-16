@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { DateRangePopover } from "./DateRangePopover";
+import { DateRangePopover } from "../DateRangePopover";
 import { DateRange } from "react-day-picker";
 import { motion } from "framer-motion";
 

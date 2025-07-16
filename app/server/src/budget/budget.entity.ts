@@ -10,7 +10,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { BudgetMember } from './budget-member.entity';
@@ -39,7 +38,10 @@ export class Budget implements OwnedEntity {
   })
   months: Month[];
 
-  @OneToMany(() => BudgetMember, (member) => member.budget)
+  @OneToMany(() => BudgetMember, (member) => member.budget, {
+    cascade: true,
+    eager: true,
+  })
   members: BudgetMember[];
 
   @OneToMany(() => BudgetInvite, (invite) => invite.budget, { cascade: true })

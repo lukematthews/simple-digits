@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { socket } from "@/lib/socket";
-import { MonthReorderEditor } from "./MonthReorderEditor";
+import { MonthReorderEditor } from "../month/MonthReorderEditor";
 
 /** Helpers */
 const camelCase = (str: string) =>

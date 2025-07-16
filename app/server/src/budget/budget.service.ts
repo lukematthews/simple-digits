@@ -60,11 +60,6 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     const handler = async (message: WsEvent<BudgetDto>) => {
       this.logger.log('handled budget message in BudgetService');
       const budget = plainToInstance(Budget, message.payload);
-      await this.budgetAccessService.assertHasRole(userId, { budgetId: budget.id }, [
-        'OWNER',
-        'EDITOR',
-      ]);
-
       if (message.operation === Types.CREATE) {
         budget.months?.forEach((month) => {
           month.userId = userId;
@@ -76,8 +71,19 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
           budget.months[0].started = true;
         }
         budget.userId = userId;
+        const ownerMember = new BudgetMember();
+        ownerMember.userId = userId;
+        ownerMember.role = 'OWNER';
+
+        budget.members = [ownerMember];
+
         await this.create('api', budget);
       } else if (message.operation === Types.UPDATE) {
+        await this.budgetAccessService.assertHasRole(
+          userId,
+          { budgetId: budget.id },
+          ['OWNER', 'EDITOR'],
+        );
         await this.update(
           'api',
           message.payload.id,
@@ -97,14 +103,6 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     if (!saved.userId) {
       throw new Error('Budget must have a userId to create a BudgetMember.');
     }
-
-    const budgetMember = this.budgetMemberRepo.create({
-      userId: saved.userId,
-      budgetId: saved.id,
-      role: 'OWNER',
-    });
-
-    await this.budgetMemberRepo.save(budgetMember);
 
     const reloaded = await this.budgetRepo.findOneOrFail({
       where: { id: saved.id },
