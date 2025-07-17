@@ -18,10 +18,21 @@ export function useSocketEvents() {
   );
 
   /* ---- stable handler references ---- */
-  const handleBudgetEvent = (message: WsEvent<Account|Month|Transaction|Budget>) => {
+  const handleBudgetEvent = (message: WsEvent<Account | Month | Transaction | Budget>) => {
     if (message.source !== "api") return;
 
     switch (message.entity) {
+      case "budget": {
+        const budget = message.payload as Budget;
+        if (message.operation === "create") {
+          useBudgetStore.getState().setCurrentBudget(budget);
+        } else if (message.operation === "update") {
+          useBudgetStore.getState().setCurrentBudget(budget);
+        } else if (message.operation === "delete") {
+          useBudgetStore.getState().setCurrentBudget(null);
+        }
+        break;
+      }
       case "transaction": {
         const tx = message.payload as Transaction;
         if (message.operation === "create") addTransaction(tx);
@@ -39,7 +50,7 @@ export function useSocketEvents() {
         const acc = message.payload as Account;
         if (message.operation === "create") addAccount(acc);
         else if (message.operation === "update") updateAccount(acc);
-        else if (message.operation === "delete") deleteAccount(acc.id!, acc.monthId);        
+        else if (message.operation === "delete") deleteAccount(acc.id!, acc.monthId);
         break;
       }
     }

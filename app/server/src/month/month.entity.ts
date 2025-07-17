@@ -20,9 +20,22 @@ export class Month implements OwnedEntity {
   @Column({ nullable: true })
   userId!: string;
 
-  @JoinColumn({ name: 'budgetId' })
-  @ManyToOne(() => Budget, (budget) => budget.months, { eager: false })
+  @ManyToOne(() => Budget, (budget) => budget.months, {
+    onDelete: 'CASCADE',
+  })
   budget: Budget;
+
+  @OneToMany(() => Transaction, (txn) => txn.month, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  transactions: Transaction[];
+
+  @OneToMany(() => Account, (account) => account.month, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  accounts: Account[];
 
   @Column()
   name: string;
@@ -35,16 +48,6 @@ export class Month implements OwnedEntity {
 
   @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
   closingBalance: number;
-
-  @OneToMany(() => Transaction, (txn) => txn.month, {
-    cascade: true,
-  })
-  transactions: Transaction[];
-
-  @OneToMany(() => Account, (account) => account.month, {
-    cascade: ['insert', 'update'],
-  })
-  accounts: Account[];
 
   @Column({ nullable: true })
   position: number;

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from './budget.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { Month } from '@/month/month.entity';
 import { BudgetSummaryDto } from './dto/budgetSummary.dto';
@@ -24,6 +24,7 @@ import { Transaction } from '@/transaction/transaction.entity';
 import { BudgetAccessService } from './budget-access.service';
 import { BudgetMember } from './budget-member.entity';
 import { emitAuditEvent } from '@/audit/audit-emitter.util';
+import { User } from '@/user/user.entity';
 
 @Injectable()
 export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
@@ -188,6 +189,15 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     });
     dto.userRole = await this.budgetAccessService.getUserRole(userId, id);
     return dto;
+  }
+
+  async findBudgetForShortcodeAndMonth(user: User, budgetCode: string, monthCode: string) {
+    return await this.budgetRepo.findOne({
+      where: [
+        { shortCode: budgetCode },
+        { previousShortCodes: In([budgetCode]) },
+      ],
+    });
   }
 
   async list(userId: string): Promise<BudgetSummaryDto[]> {

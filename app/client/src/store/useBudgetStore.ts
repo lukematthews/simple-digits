@@ -17,10 +17,10 @@ type BudgetSummarySlice = {
 
 type BudgetSlice = {
   budgets: Budget[];
-  currentBudget?: Budget;
+  currentBudget: Budget | null;
   isBudgetLoading: boolean;
   setBudgets: (b: Budget[]) => void;
-  setCurrentBudget: (b: Budget) => void;
+  setCurrentBudget: (b: Budget | null) => void;
   loadBudgets: () => Promise<void>;
   loadBudgetById: (id: string) => Promise<void>;
   accessMap: Record<string, Role>;
@@ -84,6 +84,7 @@ export const useBudgetStore = create<Store>()(
       budgets: [],
       budgetSummaries: [],
       isBudgetLoading: false,
+      currentBudget: null,
 
       setBudgets: (budgets) => set({ budgets }),
       setCurrentBudget: (budget) => set({ currentBudget: budget }),
