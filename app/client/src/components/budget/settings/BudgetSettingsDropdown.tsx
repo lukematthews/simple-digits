@@ -22,7 +22,7 @@ export function BudgetSettingsDropdown({ onManageSharing }: { onRename?: () => v
 
         <DropdownMenuContent className="w-48" align="end">
           <DropdownMenuItem onClick={() => setRenameIsOpen(true)}>Rename Budget</DropdownMenuItem>
-          <DropdownMenuItem onClick={onManageSharing}>Manage Sharing</DropdownMenuItem>
+          {/* <DropdownMenuItem onClick={onManageSharing}>Manage Sharing</DropdownMenuItem> */}
           <DropdownMenuItem onClick={() => setDeleteIsOpen(true)} className="text-red-600">
             Delete Budget
           </DropdownMenuItem>
