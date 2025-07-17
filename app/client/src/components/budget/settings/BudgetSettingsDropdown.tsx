@@ -6,7 +6,7 @@ import { RenameBudgetDialog } from "./RenameBudgetDialog";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { DeleteBudgetDialog } from "./DeleteBudgetDialog";
 
-export function BudgetSettingsDropdown({ onManageSharing }: { onRename?: () => void; onDelete?: () => void; onManageSharing?: () => void }) {
+export function BudgetSettingsDropdown() {
   const [renameIsOpen, setRenameIsOpen] = useState(false);
   const [deleteIsOpen, setDeleteIsOpen] = useState(false);
   const budget = useBudgetStore((s) => s.currentBudget);
