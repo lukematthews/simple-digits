@@ -160,7 +160,7 @@ export default function BudgetWizard({ onCancel }: Props) {
             />
             <div className="pt-6 flex justify-end">
               <Button onClick={onCancel}>Cancel</Button>
-              <Button onClick={onFinish}>Finish</Button>
+              <Button className="ml-2" onClick={onFinish}>Finish</Button>
             </div>
           </div>
         )}
