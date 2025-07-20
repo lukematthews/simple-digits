@@ -4,6 +4,7 @@ import { Account, Month, WsEvent } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { Plus, Check, Trash2 } from "lucide-react";
 import { CurrencyCellInput } from "./CurrencyCellInput";
+import { useAccountsForMonth } from "@/hooks/useAccountsForMonth";
 
 type Props = { month: Month };
 
@@ -24,7 +25,7 @@ const emitSocket = (op: "create" | "update" | "delete", payload: Account) =>
   } as WsEvent<Account>);
 
 export default function AccountManager({ month }: Props) {
-  const accounts = useBudgetStore((s) => s.currentBudget?.months.find((m) => m.id === month.id)?.accounts ?? []);
+  const accounts = useAccountsForMonth(month.id);
   const updateAccountInStore = useBudgetStore((s) => s.updateAccount);
   const deleteAccountInStore = useBudgetStore((s) => s.deleteAccount);
 

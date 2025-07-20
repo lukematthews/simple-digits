@@ -1,13 +1,13 @@
 import { TabsContent } from "@/components/ui/tabs";
 import MonthDetail from "./MonthDetail";
-import AccountManager from "./AccountManager";
 import { Month, Transaction, WsEvent } from "@/types";
 import { useEffect, useState } from "react";
-import TransactionHeader from "./TransactionHeader";
-import TransactionCard from "./TransactionCard";
 import { socket } from "@/lib/socket";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
+import TransactionCard from "../transaction/TransactionCard";
+import TransactionHeader from "../transaction/TransactionHeader";
+import AccountManager from "../AccountManager";
 
 type Props = {
   month: Month;
@@ -83,7 +83,7 @@ export default function MonthTabContent({ month }: Props) {
             <div className="sticky top-0 z-10 bg-white border-b">
               <TransactionHeader />
             </div>
-            {month.transactions.map((txn) => (
+            {month.transactions?.map((txn) => (
               <TransactionCard key={txn.id} transaction={txn} />
             ))}
             {newTransaction && <TransactionCard key={newTransaction.id} transaction={newTransaction} isNew onDiscard={() => setNewTransaction(null)} onDone={handleDone} />}

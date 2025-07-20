@@ -1,7 +1,7 @@
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import BudgetWizard from "./BudgetWizard";
+import BudgetWizard from "./budget/BudgetWizard";
 
 export default function HomePage() {
   const { budgetSummaries, loadBudgetSummaries } = useBudgetStore();

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from './budget.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { Month } from '@/month/month.entity';
 import { BudgetSummaryDto } from './dto/budgetSummary.dto';
@@ -24,6 +24,7 @@ import { Transaction } from '@/transaction/transaction.entity';
 import { BudgetAccessService } from './budget-access.service';
 import { BudgetMember } from './budget-member.entity';
 import { emitAuditEvent } from '@/audit/audit-emitter.util';
+import { User } from '@/user/user.entity';
 
 @Injectable()
 export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
@@ -60,11 +61,6 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     const handler = async (message: WsEvent<BudgetDto>) => {
       this.logger.log('handled budget message in BudgetService');
       const budget = plainToInstance(Budget, message.payload);
-      await this.budgetAccessService.assertHasRole(userId, { budgetId: budget.id }, [
-        'OWNER',
-        'EDITOR',
-      ]);
-
       if (message.operation === Types.CREATE) {
         budget.months?.forEach((month) => {
           month.userId = userId;
@@ -76,12 +72,23 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
           budget.months[0].started = true;
         }
         budget.userId = userId;
+        const ownerMember = new BudgetMember();
+        ownerMember.userId = userId;
+        ownerMember.role = 'OWNER';
+
+        budget.members = [ownerMember];
+
         await this.create('api', budget);
       } else if (message.operation === Types.UPDATE) {
-        await this.update(
-          'api',
+        await this.budgetAccessService.assertHasRole(
+          userId,
+          { budgetId: budget.id },
+          ['OWNER', 'EDITOR'],
+        );
+        await this.updateBudget(
           message.payload.id,
           plainToInstance(Budget, message.payload),
+          userId,
         );
       } else if (message.operation === Types.DELETE) {
         this.delete('api', message.payload.id);
@@ -97,14 +104,6 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     if (!saved.userId) {
       throw new Error('Budget must have a userId to create a BudgetMember.');
     }
-
-    const budgetMember = this.budgetMemberRepo.create({
-      userId: saved.userId,
-      budgetId: saved.id,
-      role: 'OWNER',
-    });
-
-    await this.budgetMemberRepo.save(budgetMember);
 
     const reloaded = await this.budgetRepo.findOneOrFail({
       where: { id: saved.id },
@@ -129,6 +128,39 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     });
 
     return this.toDto(reloaded);
+  }
+
+  async updateBudget(budgetId: number, data: Partial<Budget>, userId: string) {
+    const existing = await this.budgetRepo.findOneByOrFail({ id: budgetId });
+
+    if (existing.shortCode !== data.shortCode && data.shortCode) {
+      existing.previousShortCodes = [
+        ...(existing.previousShortCodes ?? []),
+        existing.shortCode,
+      ];
+      existing.shortCode = data.shortCode;
+    }
+
+    existing.name = data.name ?? existing.name;
+
+    const saved = await this.budgetRepo.save(existing);
+
+    emitAuditEvent({
+      eventEmitter: this.eventEmitter,
+      actor: 'api',
+      entity: 'budget',
+      entityId: saved.id,
+      operation: 'create',
+      after: saved,
+    });
+
+    this.emitSocketEvent({
+      source: 'api',
+      entity: 'budget',
+      operation: 'update',
+      id: saved.id,
+      payload: this.toDto(saved),
+    });
   }
 
   override getDefaultRelations(): Record<string, any> {
@@ -157,6 +189,15 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     });
     dto.userRole = await this.budgetAccessService.getUserRole(userId, id);
     return dto;
+  }
+
+  async findBudgetForShortcodeAndMonth(user: User, budgetCode: string, monthCode: string) {
+    return await this.budgetRepo.findOne({
+      where: [
+        { shortCode: budgetCode },
+        { previousShortCodes: In([budgetCode]) },
+      ],
+    });
   }
 
   async list(userId: string): Promise<BudgetSummaryDto[]> {

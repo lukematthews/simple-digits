@@ -1,6 +1,6 @@
 // store/useBudgetStore.ts
-import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
+import { createWithEqualityFn } from "zustand/traditional";
 import { Budget, BudgetSummary, Month, Transaction, Account, Role } from "@/types";
 import { WS_URL } from "@/config";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
@@ -17,10 +17,10 @@ type BudgetSummarySlice = {
 
 type BudgetSlice = {
   budgets: Budget[];
-  currentBudget?: Budget;
+  currentBudget: Budget | null;
   isBudgetLoading: boolean;
   setBudgets: (b: Budget[]) => void;
-  setCurrentBudget: (b: Budget) => void;
+  setCurrentBudget: (b: Budget | null) => void;
   loadBudgets: () => Promise<void>;
   loadBudgetById: (id: string) => Promise<void>;
   accessMap: Record<string, Role>;
@@ -44,9 +44,15 @@ type AccountSlice = {
   updateAccount: (account: Account) => void;
   addAccount: (account: Account) => void;
   deleteAccount: (accountId: string, monthId: string) => void;
+  getAccountsByMonthId: (monthId: string) => Account[];
 };
 
-type Store = BudgetSummarySlice & BudgetSlice & TransactionSlice & MonthSlice & AccountSlice & { reset: () => void };
+type ActiveMonthSlice = {
+  activeMonthId: string | null;
+  setActiveMonthId: (id: string | null) => void;
+};
+
+type Store = BudgetSummarySlice & BudgetSlice & TransactionSlice & MonthSlice & AccountSlice & ActiveMonthSlice & { reset: () => void };
 
 export function populateMonthIds(budget: Budget): Budget {
   const updatedMonths = budget.months.map((month) => {
@@ -77,13 +83,15 @@ export const resetAllStores = () => {
   useBudgetStore.getState().reset();
 };
 
-export const useBudgetStore = create<Store>()(
+export const useBudgetStore = createWithEqualityFn<Store>()(
   subscribeWithSelector(
     devtools((set, get) => ({
       // ─── Budget Slice ─────────────────────────────────────
       budgets: [],
       budgetSummaries: [],
       isBudgetLoading: false,
+      currentBudget: null,
+      activeMonthId: null,
 
       setBudgets: (budgets) => set({ budgets }),
       setCurrentBudget: (budget) => set({ currentBudget: budget }),
@@ -281,6 +289,8 @@ export const useBudgetStore = create<Store>()(
           },
         })),
 
+      setActiveMonthId: (id) => set({ activeMonthId: id }),
+
       // ─── Account Slice ─────────────────────────────────────
       updateAccount: (updated) =>
         set((state) => {
@@ -355,6 +365,10 @@ export const useBudgetStore = create<Store>()(
             },
           };
         }),
+      getAccountsByMonthId: (monthId: string) => {
+        const month = get().currentBudget?.months.find((m) => m.id === monthId);
+        return month?.accounts ?? [];
+      },
       reset: () =>
         set({
           budgets: [],
@@ -362,6 +376,7 @@ export const useBudgetStore = create<Store>()(
           currentBudget: undefined,
           currentBudgetSummary: undefined,
           isBudgetLoading: false,
+          activeMonthId: null,
         }),
     }))
   )

@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { useBudgetStore } from "@/store/useBudgetStore";
+import { BudgetSettingsDropdown } from "./budget/settings/BudgetSettingsDropdown";
 
 export default function Layout() {
   const location = useLocation();
@@ -15,13 +16,18 @@ export default function Layout() {
           {/* Left: Budget Name (only on /b routes and when loaded) */}
           <div>
             {isBudgetPage && budget?.name && (
-              <h1 className="text-3xl font-bold text-gray-700">{budget.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-700">
+                <BudgetSettingsDropdown/>
+                {budget.name}
+              </h1>
             )}
           </div>
 
           {/* Right: App Name + Profile */}
           <div className="flex items-center gap-x-4">
-            <a href="/b"><h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2></a>
+            <a href="/b">
+              <h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2>
+            </a>
             <ProfileMenu />
           </div>
         </div>

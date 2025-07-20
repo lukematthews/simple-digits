@@ -60,9 +60,9 @@ export function calculateMonthBalances(months: Month[]) {
 }
 
 function calculateBalancesForStartedMonth(month: Month) {
-  const startingBalance = month.accounts.reduce((sum, acc) => sum + +acc.balance!, 0);
+  const startingBalance = month.accounts?.reduce((sum, acc) => sum + +acc.balance!, 0) ?? 0;
   month.startingBalance = startingBalance;
-  month.closingBalance = startingBalance + month.transactions.filter((t) => t.paid === false).reduce((sum, trxn) => sum + trxn.amount, 0);
+  month.closingBalance = startingBalance + (month.transactions ? month.transactions?.filter((t) => t.paid === false).reduce((sum, trxn) => sum + trxn.amount, 0) : 0);
 }
 
 function calculateBalancesForNonStartedMonth(month: Month, months: Month[], index: number) {

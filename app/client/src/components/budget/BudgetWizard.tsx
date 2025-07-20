@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { socket } from "@/lib/socket";
-import { MonthReorderEditor } from "./MonthReorderEditor";
+import { MonthReorderEditor } from "../month/MonthReorderEditor";
 
 /** Helpers */
 const camelCase = (str: string) =>
@@ -160,7 +160,7 @@ export default function BudgetWizard({ onCancel }: Props) {
             />
             <div className="pt-6 flex justify-end">
               <Button onClick={onCancel}>Cancel</Button>
-              <Button onClick={onFinish}>Finish</Button>
+              <Button className="ml-2" onClick={onFinish}>Finish</Button>
             </div>
           </div>
         )}

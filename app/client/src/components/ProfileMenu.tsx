@@ -1,22 +1,18 @@
 import { WS_URL } from "@/config";
-import { resetAllStores } from "@/store/useBudgetStore";
+import { resetAllStores, useBudgetStore } from "@/store/useBudgetStore";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function ProfileMenu() {
   const [profile, setProfile] = useState<{ name: string; email: string; picture?: string } | null>(null);
-  const [budgets, setBudgets] = useState<{ id: number; name: string, shortCode: string }[]>([]);
+  const budgets = useBudgetStore((s) => s.budgetSummaries);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetch(`${WS_URL}/auth/profile`, { credentials: "include" })
       .then((res) => res.json())
       .then(setProfile);
-
-    fetch(`${WS_URL}/budget/list`, { credentials: "include" })
-      .then((res) => res.json())
-      .then(setBudgets);
   }, []);
 
   const logout = async () => {
