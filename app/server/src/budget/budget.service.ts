@@ -258,7 +258,7 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
       relations: ['month', 'month.budget'],
     });
 
-    return await this.findBudgetByMonthId((await account).month.budget.id);
+    return await this.findBudgetByMonthId((await account).month.id);
   }
 
   async findBudgetByTransactionId(txnId: number): Promise<Budget> {
