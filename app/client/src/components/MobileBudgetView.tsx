@@ -253,9 +253,6 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </motion.div>
         )}
       </main>
-      <Link to="/b" className="fixed bottom-6 left-6 w-[calc(100%-7.5rem)] text-center text-lg font-semibold px-6 py-3 rounded-xl bg-gray-100 text-gray-700 shadow-md">
-        Simple Digits
-      </Link>
       <button
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
         aria-label="Add Transaction"
