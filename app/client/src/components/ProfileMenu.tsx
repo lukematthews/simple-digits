@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 export function ProfileMenu() {
   const [profile, setProfile] = useState<{ name: string; email: string; picture?: string } | null>(null);
-  const budgets = useBudgetStore((s) => s.budgets);
+  const budgets = useBudgetStore((s) => s.budgetSummaries);
   const navigate = useNavigate();
 
   useEffect(() => {

@@ -157,7 +157,7 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     this.emitSocketEvent({
       source: 'api',
       entity: 'budget',
-      operation: 'create',
+      operation: 'update',
       id: saved.id,
       payload: this.toDto(saved),
     });

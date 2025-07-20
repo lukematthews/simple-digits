@@ -83,7 +83,7 @@ export default function MonthTabContent({ month }: Props) {
             <div className="sticky top-0 z-10 bg-white border-b">
               <TransactionHeader />
             </div>
-            {month.transactions.map((txn) => (
+            {month.transactions?.map((txn) => (
               <TransactionCard key={txn.id} transaction={txn} />
             ))}
             {newTransaction && <TransactionCard key={newTransaction.id} transaction={newTransaction} isNew onDiscard={() => setNewTransaction(null)} onDone={handleDone} />}

@@ -17,7 +17,7 @@ export default function Layout() {
           <div>
             {isBudgetPage && budget?.name && (
               <h1 className="text-3xl font-bold text-gray-700">
-                <BudgetSettingsDropdown onRename={() => console.log("Rename clicked")} onDelete={() => console.log("Delete clicked")} onManageSharing={() => console.log("Sharing clicked")} />
+                <BudgetSettingsDropdown/>
                 {budget.name}
               </h1>
             )}
