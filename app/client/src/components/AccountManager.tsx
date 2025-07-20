@@ -41,6 +41,7 @@ export default function AccountManager({ month }: Props) {
       [field]: field === "balance" ? parseFloat(value as string) || 0 : value,
     };
     updateAccountInStore(updated);
+    if (updated) emitSocket("update", updated);
   };
 
   const handleExistingBlur = (id: string) => {
