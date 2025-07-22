@@ -75,52 +75,95 @@ export default function TransactionCardMobile({ transaction, isNew = false, onDo
   }
 
   return (
-    <div className="w-full flex items-center gap-2">
-      <Checkbox
-        checked={paid}
-        onCheckedChange={(val) => {
-          const newPaid = !!val;
-          setPaid(newPaid);
-          if (!isNew && newPaid !== transaction.paid) emitUpdate({ paid: newPaid });
+    <div className="w-full flex flex-col gap-2 p-3 rounded shadow">
+      {/* Editable fields */}
+      <input
+        className="border p-2 rounded text-sm w-full"
+        placeholder="Description"
+        autoFocus={autoFocus}
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        onBlur={() => {
+          if (!isNew && description !== transaction.description) emitUpdate({ description });
         }}
       />
-      <div className={clsx("text-sm font-semibold text-right text-gray-800 px-2 rounded w-1/5", balanceColor)}>
-        {transaction?.balance?.toLocaleString("en-AU", {
-          style: "currency",
-          currency: "AUD",
-        })}
+
+      <div className="flex gap-2">
+        <input
+          type="date"
+          className="border p-2 rounded text-sm w-1/2"
+          value={format(new Date(date), "yyyy-MM-dd")}
+          onChange={(e) => setDate(e.target.value)}
+          onBlur={() => {
+            if (!isNew && date !== transaction.date) emitUpdate({ date });
+          }}
+        />
+        <div className="w-1/2">
+          <CurrencyCellInput
+            value={amount}
+            onChange={(val) => {
+              setAmount(val);
+              if (!isNew && val !== transaction.amount) emitUpdate({ amount: val });
+            }}
+            placeholder="0.00"
+          />
+        </div>
       </div>
-      <div className="flex gap-2 flex-grow justify-end">
-        {isNew ? (
-          <>
-            <button className="text-green-600" onClick={emitCreate}>
-              <Check size={18} />
-            </button>
-            <button className="text-red-500" onClick={() => onDiscard?.(transaction.id!)}>
-              <Trash2 size={18} />
-            </button>
-          </>
-        ) : (
-          <>
-            <button className="text-gray-500" onClick={() => setEditing(false)}>
-              Cancel
-            </button>
-            <button
-              className="text-red-500"
-              onClick={() =>
-                socket.emit("budgetEvent", {
-                  source: "frontend",
-                  entity: "transaction",
-                  operation: "delete",
-                  id: transaction.id!,
-                  payload: transaction,
-                } as WsEvent<Transaction>)
-              }
-            >
-              <Trash2 size={18} />
-            </button>
-          </>
-        )}
+
+      {/* Controls and balance */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={paid}
+            onCheckedChange={(val) => {
+              const newPaid = !!val;
+              setPaid(newPaid);
+              if (!isNew && newPaid !== transaction.paid) emitUpdate({ paid: newPaid });
+            }}
+          />
+          <span className="text-sm">Paid</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isNew ? (
+            <>
+              <button className="text-green-600" onClick={emitCreate}>
+                <Check size={18} />
+              </button>
+              <button className="text-red-500" onClick={() => onDiscard?.(transaction.id!)}>
+                <Trash2 size={18} />
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="text-gray-500" onClick={() => setEditing(false)}>
+                Close
+              </button>
+              <button
+                className="text-red-500"
+                onClick={() =>
+                  socket.emit("budgetEvent", {
+                    source: "frontend",
+                    entity: "transaction",
+                    operation: "delete",
+                    id: transaction.id!,
+                    payload: transaction,
+                  } as WsEvent<Transaction>)
+                }
+              >
+                <Trash2 size={18} />
+              </button>
+            </>
+          )}
+
+          {/* Running balance */}
+          <div className={clsx("text-sm font-semibold text-right text-gray-800 px-2 rounded w-[100px]", balanceColor)}>
+            {transaction?.balance?.toLocaleString("en-AU", {
+              style: "currency",
+              currency: "AUD",
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
