@@ -34,7 +34,7 @@ export default function Layout() {
       </div>
 
       {/* Page Content */}
-      <main className="flex-1 px-4 max-w-screen-xl mx-auto">
+      <main className="flex-1 max-w-screen-xl mx-auto">
         <Outlet />
       </main>
     </div>
