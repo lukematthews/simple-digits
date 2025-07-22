@@ -41,9 +41,9 @@ export default function AuthFlow() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post(WS_URL + '/auth/login', { email, password });
+      const res = await axios.post(WS_URL + '/auth/login', { email, password }, { withCredentials: true });
       console.log('Login successful', res.data);
-      // TODO: Store token in cookie/localStorage
+      window.location.href = '/b';
     } catch (err) {
       console.error('Login failed', err);
     }
@@ -116,6 +116,7 @@ export default function AuthFlow() {
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
           />
+          <p>Here's the rules: - Must be at least 6 characters - Must contain a digit - Must contain a special character</p>
           <Button className="w-full" onClick={handleSignup}>Sign up</Button>
         </>
       )}

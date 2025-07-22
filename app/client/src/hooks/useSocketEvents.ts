@@ -3,10 +3,14 @@ import { socket } from "@/lib/socket";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { Transaction, Account, Month, WsEvent, Budget } from "@/types";
 import { calculateMonthBalances } from "@/lib/monthUtils";
+import { useNavigate } from "react-router-dom";
+import { useActiveMonth } from "./useActiveMonth";
 
 export function useSocketEvents() {
   /* ---- grab store actions once (stable refs) ---- */
   const { addTransaction, updateTransaction, deleteTransaction, addMonth, updateMonth, reorderMonths, addAccount, updateAccount, deleteAccount } = useBudgetStore.getState();
+  const navigate = useNavigate();
+  const activeMonth = useActiveMonth(); // <-- Use hook here
 
   /* ---- keep latest budget reference inside a ref so the handler never closes over stale data ---- */
   const budgetRef = useRef(useBudgetStore.getState().currentBudget);
@@ -18,10 +22,48 @@ export function useSocketEvents() {
   );
 
   /* ---- stable handler references ---- */
-  const handleBudgetEvent = (message: WsEvent<Account|Month|Transaction|Budget>) => {
+  const handleBudgetEvent = (message: WsEvent<Account | Month | Transaction | Budget>) => {
     if (message.source !== "api") return;
 
     switch (message.entity) {
+      case "budget": {
+        const budget = message.payload as Budget;
+        if (message.operation === "create") {
+          useBudgetStore.getState().setCurrentBudget(budget);
+        } else if (message.operation === "update") {
+          const updatedBudget = message.payload as Budget;
+          const store = useBudgetStore.getState();
+
+          // Update list
+          store.setBudgets(store.budgets.map((b) => (b.id === updatedBudget.id ? updatedBudget : b)));
+          store.setBudgetSummaries(
+            store.budgetSummaries.map((b) => {
+              if (b.id === updatedBudget.id) {
+                return {
+                  ...b,
+                  name: updatedBudget.name,
+                  shortCode: updatedBudget.shortCode,
+                };
+              }
+              return b;
+            })
+          );
+
+          // If it's the current budget, update it
+          if (store.currentBudget?.id === updatedBudget.id) {
+            const previousShortCode = store.currentBudget.shortCode;
+            store.setCurrentBudget(updatedBudget);
+
+            if (previousShortCode && previousShortCode !== updatedBudget.shortCode) {
+              const newPath = activeMonth ? `/b/${updatedBudget.shortCode}/${activeMonth.name}` : `/b/${updatedBudget.shortCode}`;
+              navigate(newPath, { replace: true });
+            }
+          }
+        } else if (message.operation === "delete") {
+          useBudgetStore.getState().setCurrentBudget(null);
+        }
+        break;
+      }
       case "transaction": {
         const tx = message.payload as Transaction;
         if (message.operation === "create") addTransaction(tx);
@@ -39,7 +81,7 @@ export function useSocketEvents() {
         const acc = message.payload as Account;
         if (message.operation === "create") addAccount(acc);
         else if (message.operation === "update") updateAccount(acc);
-        else if (message.operation === "delete") deleteAccount(acc.id!, acc.monthId);        
+        else if (message.operation === "delete") deleteAccount(acc.id!, acc.monthId);
         break;
       }
     }

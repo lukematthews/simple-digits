@@ -1,6 +1,6 @@
 // src/components/BudgetApp.tsx
-import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { socket } from "@/lib/socket";
 import { calculateMonthBalances } from "@/lib/monthUtils";
 import { useBudgetStore } from "@/store/useBudgetStore";
@@ -12,6 +12,7 @@ import DesktopBudgetView from "./DesktopBudgetView";
 export default function BudgetApp() {
   const navigate = useNavigate();
   const params = useParams<{ shortCode?: string; monthName?: string }>();
+  const location = useLocation();
   const shortCode = params.shortCode || "";
   const monthShortCode = params.monthName;
 
@@ -23,7 +24,8 @@ export default function BudgetApp() {
   const isBudgetLoading = useBudgetStore((s) => s.isBudgetLoading);
   const isMobile = useIsMobile();
 
-  const [activeMonthId, setActiveMonthId] = useState<string | null>(null);
+  const activeMonthId = useBudgetStore((s) => s.activeMonthId);
+  const setActiveMonthId = useBudgetStore((s) => s.setActiveMonthId);
 
   const activeMonth = budget?.months.find((m) => m.id === activeMonthId) ?? null;
 
@@ -42,7 +44,7 @@ export default function BudgetApp() {
   const hasSetInitialMonth = useRef(false);
 
   useEffect(() => {
-    if (!budget || hasSetInitialMonth.current) return;
+    if (!budget || hasSetInitialMonth.current || budget.months.length === 0) return;
 
     calculateMonthBalances(budget.months);
 
@@ -53,10 +55,7 @@ export default function BudgetApp() {
         hasSetInitialMonth.current = true;
       }
     } else {
-      // Filter to started months
       const startedMonths = budget.months.filter((m) => m.started);
-
-      // Use started months if available, otherwise fall back to all months
       const candidateMonths = startedMonths.length > 0 ? startedMonths : budget.months;
 
       if (candidateMonths.length > 0) {
@@ -67,11 +66,11 @@ export default function BudgetApp() {
         hasSetInitialMonth.current = true;
       }
     }
-  }, [budget, monthShortCode]);
+  }, [budget, location.pathname]);
 
   useEffect(() => {
     hasSetInitialMonth.current = false;
-  }, [budget?.id]);
+  }, [location.pathname]);
 
   if (isBudgetLoading || !budget) return <LoadingSpinner />;
 

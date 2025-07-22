@@ -1,7 +1,7 @@
 import { Month, WsEvent } from "@/types";
-import { Checkbox } from "./ui/checkbox";
+import { Checkbox } from "../ui/checkbox";
 import { useEffect, useState } from "react";
-import { Label } from "./ui/label";
+import { Label } from "../ui/label";
 import CurrencyInput from "react-currency-input-field";
 import { socket } from "@/lib/socket";
 import { useBudgetStore } from "@/store/useBudgetStore";

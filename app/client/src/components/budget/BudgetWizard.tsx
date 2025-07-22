@@ -7,8 +7,8 @@ import { DateRange } from "react-day-picker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { DateRangePopover } from "./DateRangePopover";
 import { socket } from "@/lib/socket";
+import { MonthReorderEditor } from "../month/MonthReorderEditor";
 
 /** Helpers */
 const camelCase = (str: string) =>
@@ -72,18 +72,6 @@ export default function BudgetWizard({ onCancel }: Props) {
   const updateMonthName = (id: string, name: string) => setMonths((m) => m.map((x) => (x.id === id ? { ...x, name } : x)));
 
   const updateMonthDates = (id: string, range: DateRange | undefined) => setMonths((months) => months.map((m) => (m.id === id ? { ...m, from: range?.from, to: range?.to } : m)));
-  const moveMonth = (id: string, dir: -1 | 1) =>
-    setMonths((prev) => {
-      const idx = prev.findIndex((m) => m.id === id);
-      const newIdx = idx + dir;
-      if (newIdx < 0 || newIdx >= prev.length) return prev;
-      const next = [...prev];
-      [next[idx], next[newIdx]] = [
-        { ...next[newIdx], position: idx },
-        { ...next[idx], position: newIdx },
-      ];
-      return next;
-    });
 
   const deleteMonth = (id: string) => setMonths((m) => m.filter((x) => x.id !== id).map((m, i) => ({ ...m, position: i })));
 
@@ -155,37 +143,24 @@ export default function BudgetWizard({ onCancel }: Props) {
                 </Button>
               </div>
             </div>
-          )}{" "}
+          )}
         </div>
 
         {/* Step 2 – Months */}
         {showMonths && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Months</h2>
-            {months.map((m, idx) => (
-              <div key={m.id} className="flex flex-col gap-2 border rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <Input value={m.name} onChange={(e) => updateMonthName(m.id, e.target.value)} className="flex-1" placeholder="Month name" />
-                  <Button variant="outline" size="icon" onClick={() => moveMonth(m.id, -1)} disabled={idx === 0}>
-                    ↑
-                  </Button>
-                  <Button variant="outline" size="icon" onClick={() => moveMonth(m.id, 1)} disabled={idx === months.length - 1}>
-                    ↓
-                  </Button>
-                  <Button variant="destructive" size="icon" onClick={() => deleteMonth(m.id)}>
-                    ✕
-                  </Button>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Duration</label>
-                  <DateRangePopover value={m.from ? { from: m.from, to: m.to } : undefined} onChange={(range) => updateMonthDates(m.id, range)} />{" "}
-                </div>
-              </div>
-            ))}
-            <Button onClick={addMonthRow}>+ Add Month</Button>
+            <MonthReorderEditor
+              months={months}
+              onAdd={addMonthRow}
+              onUpdateName={updateMonthName}
+              onUpdateDates={updateMonthDates}
+              onDelete={deleteMonth}
+              onReorder={(reordered) => setMonths(reordered)}
+            />
             <div className="pt-6 flex justify-end">
               <Button onClick={onCancel}>Cancel</Button>
-              <Button onClick={onFinish}>Finish</Button>
+              <Button className="ml-2" onClick={onFinish}>Finish</Button>
             </div>
           </div>
         )}

@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Budget, Month, Transaction, Account, WsEvent } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
-import TransactionCardMobile from "./TransactionCardMobile";
+import TransactionCardMobile from "./transaction/TransactionCardMobile";
 import { CurrencyCellInput } from "./CurrencyCellInput";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { v4 as uuid } from "uuid";
 import { socket } from "@/lib/socket";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useRef } from "react";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
-  const total = accounts.reduce((sum, a) => {
+  const total = accounts?.reduce((sum, a) => {
     const value = typeof a.balance === "string" ? parseFloat(a.balance) : a.balance;
     return sum + (isNaN(value) ? 0 : value);
-  }, 0);
+  }, 0) ?? 0;
 
   return total.toLocaleString("en-AU", { style: "currency", currency: "AUD" });
 }
@@ -189,9 +188,10 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <header className="sticky top-0 z-10 bg-blue-100 bg-opacity-80 shadow-sm px-4 py-3 space-y-3">
+      <header className="sticky top-0 z-10 bg-blue-100 bg-opacity-80 shadow-sm px-0 py-0 space-y-3">
         <select
           className="w-full border rounded-md px-3 py-2 text-base"
+          name="month-select"
           value={month.id}
           onChange={(e) => {
             if (e.target.value === "add") return setShowAddModal(true);
@@ -209,27 +209,25 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
 
         <div className="flex justify-between text-center">
           <div className="w-1/2">
-            <p className={`text-lg font-semibold px-2 py-1 rounded ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
+            <p className={`text-md font-semibold py-1 rounded ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
               {month.startingBalance?.toLocaleString("en-AU", { style: "currency", currency: "AUD" })}
             </p>
-            <p className="text-xs text-gray-500">Starting</p>
           </div>
           <div className="w-1/2">
-            <p className={`text-lg font-semibold px-2 py-1 rounded ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
+            <p className={`text-md font-semibold py-1 rounded ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
               {month.closingBalance?.toLocaleString("en-AU", { style: "currency", currency: "AUD" })}
             </p>
-            <p className="text-xs text-gray-500">Closing</p>
           </div>
         </div>
       </header>
-      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 pb-24">
-        <details className="mb-4">
+      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto px-1 pb-24">
+        <details className="mb-4 px-2">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between">
             <span>Accounts</span>
             <span>{sumAccountBalances(month.accounts)}</span>
           </summary>
           <div className="space-y-2 mt-2">
-            {month.accounts.map((a) => (
+            {month.accounts?.map((a) => (
               <div key={a.id} className="border rounded-md p-2 bg-gray-50 flex justify-between gap-2">
                 <input className="flex-1 border rounded px-2 py-1" value={a.name} onChange={(e) => handleAccountChange(a.id!, "name", e.target.value)} />
                 <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onChange={(v) => handleAccountChange(a.id!, "balance", v)} />
@@ -253,9 +251,6 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </motion.div>
         )}
       </main>
-      <Link to="/b" className="fixed bottom-6 left-6 w-[calc(100%-7.5rem)] text-center text-lg font-semibold px-6 py-3 rounded-xl bg-gray-100 text-gray-700 shadow-md">
-        Simple Digits
-      </Link>
       <button
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
         aria-label="Add Transaction"

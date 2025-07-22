@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Budget, Month } from "@/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MonthTabContent from "./MonthTabContent";
 import { socket } from "@/lib/socket";
 import { v4 as uuid } from "uuid";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import MonthTabContent from "./month/MonthTabContent";
 
 type Props = {
   budget: Budget;
@@ -39,6 +39,17 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
       setActiveTab(`monthtab-${month.id}`);
     }
   }, [month?.id]);
+
+  useEffect(() => {
+    if (!month && budget?.months?.length > 0) {
+      // Pick highest-position started month or fallback to latest
+      const startedMonths = budget.months.filter((m) => m.started);
+      const candidates = startedMonths.length > 0 ? startedMonths : budget.months;
+      const latest = candidates.reduce((a, b) => (a.position > b.position ? a : b));
+      onSelectMonth({ id: latest.id, shortCode: latest.shortCode, name: latest.name });
+      setActiveTab(`monthtab-${latest.id}`);
+    }
+  }, [budget.id, budget.months.length]);
 
   function handleAddMonth() {
     const name = formMonth.trim();
@@ -72,7 +83,7 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
     <div className="p-4">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
-          {budget.months.map((month) => (
+          {budget.months?.map((month) => (
             <TabsTrigger key={month.id} value={`monthtab-${month.id}`} className="text-xl rounded-xl">
               {month.name}
             </TabsTrigger>

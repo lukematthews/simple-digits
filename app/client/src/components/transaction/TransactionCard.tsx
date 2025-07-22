@@ -2,10 +2,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Check, Trash2 } from "lucide-react";
 import { Transaction, WsEvent } from "@/types";
-import { Checkbox } from "./ui/checkbox";
+import { Checkbox } from "../ui/checkbox";
 import { useState } from "react";
 import { socket } from "@/lib/socket";
-import { CurrencyCellInput } from "./CurrencyCellInput";
+import { CurrencyCellInput } from "../CurrencyCellInput";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-AU", {

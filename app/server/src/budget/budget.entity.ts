@@ -10,7 +10,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { BudgetMember } from './budget-member.entity';
@@ -20,7 +19,7 @@ export class Budget implements OwnedEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'userId' })
   user!: User;
 
@@ -34,14 +33,25 @@ export class Budget implements OwnedEntity {
   shortCode: string;
 
   @OneToMany(() => Month, (month) => month.budget, {
-    cascade: true,
+    cascade: ['insert', 'update', 'remove'],
     eager: true,
+    onDelete: 'CASCADE',
   })
   months: Month[];
 
-  @OneToMany(() => BudgetMember, (member) => member.budget)
+  @OneToMany(() => BudgetMember, (member) => member.budget, {
+    cascade: ['insert', 'update', 'remove'],
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   members: BudgetMember[];
 
-  @OneToMany(() => BudgetInvite, (invite) => invite.budget, { cascade: true })
+  @OneToMany(() => BudgetInvite, (invite) => invite.budget, {
+    cascade: ['insert', 'update', 'remove'],
+    onDelete: 'CASCADE',
+  })
   invites: BudgetInvite[];
+
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
+  previousShortCodes: string[];
 }

@@ -1,6 +1,12 @@
 // entities/budget-invite.entity.ts
 import { Budget } from '@/budget/budget.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class BudgetInvite {
@@ -19,9 +25,11 @@ export class BudgetInvite {
   @Column({ default: 'PENDING' })
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED';
 
-  @ManyToOne(() => Budget, budget => budget.invites)
+  @ManyToOne(() => Budget, (budget) => budget.invites, {
+    onDelete: 'CASCADE',
+  })
   budget: Budget;
-
+  
   @Column()
   budgetId: number;
 
