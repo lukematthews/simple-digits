@@ -9,10 +9,10 @@ export default function Layout() {
   const budget = useBudgetStore((s) => s.currentBudget);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden w-full">
       {/* Sticky Navbar */}
-      <div className="sticky top-0 z-50 bg-white border-b shadow-sm px-4">
-        <div className="flex justify-between items-center py-4 max-w-screen-xl mx-auto">
+      <div className="h-20 flex-shrink-0 z-50 bg-white border-b shadow-sm px-4">
+        <div className="flex justify-between items-center h-full max-w-screen-xl mx-auto">
           {/* Left: Budget Name (only on /b routes and when loaded) */}
           <div>
             {isBudgetPage && budget?.name && (
@@ -34,7 +34,7 @@ export default function Layout() {
       </div>
 
       {/* Page Content */}
-      <main className="flex-1 w-full sm:max-w-screen-xl sm:mx-auto">
+      <main className="flex-1 flex flex-col overflow-hidden w-full sm:max-w-screen-xl sm:mx-auto py-2">
         <Outlet />
       </main>
     </div>

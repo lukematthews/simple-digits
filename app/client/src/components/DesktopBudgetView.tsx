@@ -80,7 +80,7 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
   }
 
   return (
-    <div className="p-4">
+    <div className="flex flex-col h-full overflow-hidden">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           {budget.months?.map((month) => (

@@ -79,13 +79,11 @@ export default function MonthTabContent({ month }: Props) {
           <div className="p-2 shrink-0">
             <MonthDetail key={`month-detail-${month.id}`} month={month} onAddTransaction={handleAdd} />
           </div>
-          <div className="flex-grow overflow-y-auto min-h-0 p-0">
+          <div className="flex flex-col h-full overflow-hidden">
             <div className="sticky top-0 z-10 bg-white border-b">
               <TransactionHeader />
             </div>
-            {month.transactions?.map((txn) => (
-              <TransactionCard key={txn.id} transaction={txn} />
-            ))}
+            {month.transactions?.map((txn) => <TransactionCard key={txn.id} transaction={txn} />)}
             {newTransaction && <TransactionCard key={newTransaction.id} transaction={newTransaction} isNew onDiscard={() => setNewTransaction(null)} onDone={handleDone} />}
           </div>
         </div>

@@ -222,7 +222,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </div>
         </div>
       </header>
-      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto px-1 pb-24">
+      <main ref={scrollContainerRef} className="overflow-y-auto px-1 pb-24" style={{ height: "calc(100vh - 96px)" }}>
         <details open={accountsExpanded} onToggle={(e) => setAccountsExpanded(e.currentTarget.open)} className="mb-4 px-2 relative w-full">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between items-center">
             <span>Accounts</span>
