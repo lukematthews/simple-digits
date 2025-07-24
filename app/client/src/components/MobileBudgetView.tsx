@@ -150,7 +150,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
   if (!month) return <div>No month selected</div>;
 
   return (
-    <div className="h-screen flex flex-col bg-white w-full">
+    <div className="flex flex-col bg-white w-full" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent>
           <DialogHeader>
@@ -222,7 +222,11 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </div>
         </div>
       </header>
-      <main ref={scrollContainerRef} className="overflow-y-auto px-1 pb-24" style={{ height: "calc(100vh - 96px)" }}>
+      <main
+        ref={scrollContainerRef}
+        className="overflow-y-auto px-1 pb-24"
+        style={{ height: "calc((var(--vh, 1vh) * 100) - 96px)" }} 
+      >
         <details open={accountsExpanded} onToggle={(e) => setAccountsExpanded(e.currentTarget.open)} className="mb-4 px-2 relative w-full">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between items-center">
             <span>Accounts</span>
