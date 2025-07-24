@@ -18,10 +18,11 @@ import { motion } from "framer-motion";
 import { useRef } from "react";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
-  const total = accounts?.reduce((sum, a) => {
-    const value = typeof a.balance === "string" ? parseFloat(a.balance) : a.balance;
-    return sum + (isNaN(value) ? 0 : value);
-  }, 0) ?? 0;
+  const total =
+    accounts?.reduce((sum, a) => {
+      const value = typeof a.balance === "string" ? parseFloat(a.balance) : a.balance;
+      return sum + (isNaN(value) ? 0 : value);
+    }, 0) ?? 0;
 
   return total.toLocaleString("en-AU", { style: "currency", currency: "AUD" });
 }
@@ -40,6 +41,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
   const [formStarted, setFormStarted] = useState(false);
   const [formCopyAccounts, setFormCopyAccounts] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [accountsExpanded, setAccountsExpanded] = useState(false);
 
   const updateMonth = useBudgetStore((s) => s.updateMonth);
   const monthFromStore = useBudgetStore((s) => s.currentBudget?.months.find((m) => String(m.id) === String(month?.id)));
@@ -148,7 +150,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
   if (!month) return <div>No month selected</div>;
 
   return (
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-white w-full">
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent>
           <DialogHeader>
@@ -221,12 +223,37 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
         </div>
       </header>
       <main ref={scrollContainerRef} className="flex-1 overflow-y-auto px-1 pb-24">
-        <details className="mb-4 px-2">
-          <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between">
+        <details open={accountsExpanded} onToggle={(e) => setAccountsExpanded(e.currentTarget.open)} className="mb-4 px-2 relative w-full">
+          <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between items-center">
             <span>Accounts</span>
-            <span>{sumAccountBalances(month.accounts)}</span>
+            {!month.accounts || month.accounts.length === 0 ? (
+              <button
+                onClick={() => {
+                  const newAccount: Account = {
+                    id: uuid(),
+                    name: "",
+                    balance: 0,
+                    monthId: month.id,
+                  };
+                  const event: WsEvent<Account> = {
+                    source: "frontend",
+                    entity: "account",
+                    operation: "create",
+                    payload: newAccount,
+                  };
+                  socket.emit("budgetEvent", event);
+                  setAccountsExpanded(true);
+                }}
+                className="ml-2 rounded-full p-1 text-blue-600 hover:bg-blue-100"
+                aria-label="Add Account"
+              >
+                <Plus size={20} />
+              </button>
+            ) : (
+              <span>{sumAccountBalances(month.accounts)}</span>
+            )}
           </summary>
-          <div className="space-y-2 mt-2">
+          <div className="w-full space-y-2 mt-2">
             {month.accounts?.map((a) => (
               <div key={a.id} className="border rounded-md p-2 bg-gray-50 flex justify-between gap-2">
                 <input className="flex-1 border rounded px-2 py-1" value={a.name} onChange={(e) => handleAccountChange(a.id!, "name", e.target.value)} />
@@ -234,6 +261,32 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
               </div>
             ))}
           </div>
+
+          {month.accounts.length > 0 && (
+            <div className="absolute right-2 -bottom-6">
+              <button
+                onClick={() => {
+                  const newAccount: Account = {
+                    name: "",
+                    balance: 0,
+                    monthId: month.id,
+                  };
+                  const event: WsEvent<Account> = {
+                    source: "frontend",
+                    entity: "account",
+                    operation: "create",
+                    payload: newAccount,
+                  };
+                  socket.emit("budgetEvent", event);
+                  setAccountsExpanded(true);
+                }}
+                className="rounded-full p-2 bg-blue-600 text-white shadow hover:bg-blue-700"
+                aria-label="Add Account"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
+          )}
         </details>
         {transactions.map((txn) => (
           <TransactionCardMobile

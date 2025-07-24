@@ -17,7 +17,7 @@ export default function Layout() {
           <div>
             {isBudgetPage && budget?.name && (
               <h1 className="text-3xl font-bold text-gray-700">
-                <BudgetSettingsDropdown/>
+                <BudgetSettingsDropdown />
                 {budget.name}
               </h1>
             )}
@@ -34,7 +34,7 @@ export default function Layout() {
       </div>
 
       {/* Page Content */}
-      <main className="flex-1 max-w-screen-xl mx-auto">
+      <main className="flex-1 w-full sm:max-w-screen-xl sm:mx-auto">
         <Outlet />
       </main>
     </div>
