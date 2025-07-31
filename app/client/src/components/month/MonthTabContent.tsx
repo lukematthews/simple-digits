@@ -77,7 +77,7 @@ export default function MonthTabContent({ month }: Props) {
       <div className="flex h-screen overflow-hidden">
         <div className="flex flex-col flex-grow overflow-hidden">
           <div className="p-2 shrink-0">
-            <MonthDetail key={`month-detail-${month.id}`} month={month} onAddTransaction={handleAdd} />
+            <MonthDetail key={`month-detail-${month.id}`} onAddTransaction={handleAdd} />
           </div>
           <div className="flex flex-col h-full overflow-hidden">
             <div className="sticky top-0 z-10 bg-white border-b">
@@ -89,7 +89,7 @@ export default function MonthTabContent({ month }: Props) {
         </div>
 
         <div className="p-2">
-          <AccountManager month={month} />
+          <AccountManager/>
         </div>
       </div>
     </TabsContent>
