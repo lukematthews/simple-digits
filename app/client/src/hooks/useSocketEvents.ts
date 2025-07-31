@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { socket } from "@/lib/socket";
 import { useBudgetStore } from "@/store/useBudgetStore";
-import { Transaction, Account, Month, WsEvent, Budget } from "@/types";
+import { Transaction, Account, Month, WsEvent, Budget, BudgetSummary } from "@/types";
 import { calculateMonthBalances } from "@/lib/monthUtils";
 import { useNavigate } from "react-router-dom";
 import { useActiveMonth } from "./useActiveMonth";
@@ -35,9 +35,9 @@ export function useSocketEvents() {
           const store = useBudgetStore.getState();
 
           // Update list
-          store.setBudgets(store.budgets.map((b) => (b.id === updatedBudget.id ? updatedBudget : b)));
+          store.setBudgets(store.budgets.map((b: Budget) => (b.id === updatedBudget.id ? updatedBudget : b)));
           store.setBudgetSummaries(
-            store.budgetSummaries.map((b) => {
+            store.budgetSummaries.map((b: BudgetSummary) => {
               if (b.id === updatedBudget.id) {
                 return {
                   ...b,

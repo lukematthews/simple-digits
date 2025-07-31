@@ -1,3 +1,8 @@
+import { AccountSlice } from "./store/slices/AccountSlice";
+import { BudgetSlice } from "./store/slices/BudgetSlice";
+import { MonthSlice } from "./store/slices/MonthSlice";
+import { TransactionSlice } from "./store/slices/TransactionSlice";
+
 export type Transaction = {
   id?: string;
   description: string;
@@ -44,6 +49,8 @@ export type BudgetSummary = {
 
 export type Role = 'OWNER' | 'EDITOR' | 'VIEWER';
 
+export type Store = BudgetSlice & TransactionSlice & MonthSlice & AccountSlice & { reset: () => void };
+
 export interface MonthControlProps {
   months: Month[];
   setMonths: React.Dispatch<React.SetStateAction<Month[]>>;
@@ -57,12 +64,12 @@ export type WsEvent<T> =
       source: "api" | "frontend";
       entity: string;
       operation: "create";
-      payload: T;
+      payload: Partial<T>;
     }
   | {
       source: "api" | "frontend";
       entity: string;
       operation: "update" | "delete";
       id: string | number;
-      payload: T;
+      payload: Partial<T>;
     };

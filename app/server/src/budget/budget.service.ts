@@ -191,7 +191,11 @@ export class BudgetService extends BaseEntityService<Budget, BudgetDto> {
     return dto;
   }
 
-  async findBudgetForShortcodeAndMonth(user: User, budgetCode: string, monthCode: string) {
+  async findBudgetForShortcodeAndMonth(
+    user: User,
+    budgetCode: string,
+    monthCode: string,
+  ) {
     return await this.budgetRepo.findOne({
       where: [
         { shortCode: budgetCode },

@@ -66,6 +66,10 @@ function calculateBalancesForStartedMonth(month: Month) {
 }
 
 function calculateBalancesForNonStartedMonth(month: Month, months: Month[], index: number) {
+  if (index === 0) {
+    calculateBalancesForStartedMonth(month);
+    return;
+  }
   const startingBalance = months.length > 1 ? months[index - 1].closingBalance : 0;
   month.startingBalance = startingBalance;
   month.closingBalance = month.transactions ? startingBalance + month.transactions.filter((t) => t.paid === false).reduce((sum, trxn) => sum + trxn.amount, 0) : startingBalance;
