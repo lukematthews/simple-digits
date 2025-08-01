@@ -60,9 +60,9 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
 
   return (
     <Card key={transaction.id} className="mx-1 px-0 py-1 mb-0 hover:bg-gray-100 transition-colors duration-200">
-      <CardContent className="flex justify-start items-center gap-0 px-3 py-1">
-        {/* Description */}
-        <div className="flex-grow px-1 m-0 min-w-0">
+      <CardContent className="px-3 py-1">
+        <div className="grid grid-cols-[1fr_130px_7rem_60px_7rem_32px] items-center gap-x-2">
+          {/* Description */}
           <input
             className="border p-1 w-full"
             placeholder="Description"
@@ -76,9 +76,8 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
               }
             }}
           />
-        </div>
-        {/* Date */}
-        <div className="w-[130px] px-1 m-0">
+
+          {/* Date */}
           <input
             type="date"
             className="border p-1 w-full"
@@ -91,9 +90,8 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
               }
             }}
           />
-        </div>
-        {/* Amount */}
-        <div className="w-28 px-1 m-0">
+
+          {/* Amount */}
           <CurrencyCellInput
             value={amount}
             onChange={(val) => {
@@ -105,22 +103,18 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
             }}
             placeholder="0.00"
           />
-        </div>
-        {/* Paid */}
-        <div className="flex justify-center px-4 m-0">
-          <Checkbox
-            checked={paid}
-            onCheckedChange={(val) => {
-              const newPaid = !!val;
-              setPaid(newPaid);
-              if (!isNew && newPaid !== transaction.paid) {
-                emitUpdate({ paid: newPaid });
-              }
-            }}
-          />
-        </div>
-        {/* Balance */}
-        <div className="w-28 px-1 m-0 flex items-center justify-end">
+          <div className="flex justify-center">
+            <Checkbox
+              checked={paid}
+              onCheckedChange={(val) => {
+                const newPaid = !!val;
+                setPaid(newPaid);
+                if (!isNew && newPaid !== transaction.paid) {
+                  emitUpdate({ paid: newPaid });
+                }
+              }}
+            />
+          </div>
           <input
             type="text"
             disabled
@@ -128,31 +122,31 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
             value={formatCurrency(transaction.balance ?? 0)}
             className={`w-full border p-1 text-sm text-right font-semibold rounded cursor-not-allowed ${transaction.balance! >= 0 ? "bg-green-100" : "bg-red-100"}`}
           />
-        </div>
-        <div className="flex items-center p-0 m-0 ml-1">
-          {isNew ? (
-            <>
-              <button className="p-0 text-green-600 hover:text-green-800" title="Save" onClick={emitCreate}>
-                <Check size={16} />
-              </button>
-              <button className="ml-1 p-0 text-red-500 hover:text-red-700" title="Discard" onClick={() => onDiscard?.(transaction.id!)}>
-                <Trash2 size={16} />
-              </button>
-            </>
-          ) : (
-            <Trash2
-              className="w-4 h-4 text-red-500 cursor-pointer ml-1"
-              onClick={() =>
-                socket.emit("budgetEvent", {
-                  source: "frontend",
-                  entity: "transaction",
-                  operation: "delete",
-                  id: transaction.id!,
-                  payload: transaction,
-                } as WsEvent<Transaction>)
-              }
-            />
-          )}
+          <div className="flex items-center space-x-1 justify-end">
+            {isNew ? (
+              <>
+                <button className="text-green-600 hover:text-green-800" title="Save" onClick={emitCreate}>
+                  <Check size={16} />
+                </button>
+                <button className="text-red-500 hover:text-red-700" title="Discard" onClick={() => onDiscard?.(transaction.id!)}>
+                  <Trash2 size={16} />
+                </button>
+              </>
+            ) : (
+              <Trash2
+                className="w-4 h-4 text-red-500 cursor-pointer"
+                onClick={() =>
+                  socket.emit("budgetEvent", {
+                    source: "frontend",
+                    entity: "transaction",
+                    operation: "delete",
+                    id: transaction.id!,
+                    payload: transaction,
+                  } as WsEvent<Transaction>)
+                }
+              />
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

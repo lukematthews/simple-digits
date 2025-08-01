@@ -323,19 +323,4 @@ export class MonthService extends BaseEntityService<Month, MonthDto> {
         .filter((t) => t.paid === false)
         .reduce((sum, trxn) => sum + trxn.amount, 0);
   }
-
-  sanitizeMonthPayload(payload: any): Partial<Month> {
-    const { startingBalance, closingBalance, fromDate, toDate, ...rest } =
-      payload;
-
-    return {
-      ...rest,
-      startingBalance:
-        typeof startingBalance === 'number' ? +startingBalance.toFixed(2) : 0,
-      closingBalance:
-        typeof closingBalance === 'number' ? +closingBalance.toFixed(2) : 0,
-      fromDate: isValid(new Date(fromDate)) ? new Date(fromDate) : null,
-      toDate: isValid(new Date(toDate)) ? new Date(toDate) : null,
-    };
-  }
 }

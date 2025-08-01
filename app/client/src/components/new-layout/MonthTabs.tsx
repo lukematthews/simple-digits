@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Budget, Month } from "@/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { socket } from "@/lib/socket";
 import { v4 as uuid } from "uuid";
@@ -8,31 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import MonthTabContent from "./month/MonthTabContent";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { useBudgetStore } from "@/store/useBudgetStore";
+import { useActiveMonth } from "@/hooks/useActiveMonth";
 
-type Props = {
-  budget: Budget;
-  month: Month | null;
-  onSelectMonth: (m: { id: string; shortCode: string; name: string }) => void;
-  onCreateTransaction: (tx: { description: string; amount: number; date: string }) => void;
-};
-
-export default function DesktopBudgetView({ budget, month, onSelectMonth }: Props) {
+export default function MonthTabs() {
+  const { currentBudget: budget, setActiveMonthId } = useBudgetStore();
   const [activeTab, setActiveTab] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [formMonth, setFormMonth] = useState("");
   const [formStarted, setFormStarted] = useState(false);
   const [formCopyAccounts, setFormCopyAccounts] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
-
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
-    const m = budget.months.find((m) => `monthtab-${m.id}` === tabId);
-    if (m) {
-      onSelectMonth({ id: m.id, shortCode: m.shortCode, name: m.name });
-    }
-  };
+  const month = useActiveMonth();
 
   useEffect(() => {
     if (month?.id) {
@@ -41,35 +28,44 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
   }, [month?.id]);
 
   useEffect(() => {
-    if (!month && budget?.months?.length > 0) {
-      // Pick highest-position started month or fallback to latest
+    if (!month && budget?.months && budget.months.length > 0) {
       const startedMonths = budget.months.filter((m) => m.started);
       const candidates = startedMonths.length > 0 ? startedMonths : budget.months;
       const latest = candidates.reduce((a, b) => (a.position > b.position ? a : b));
-      onSelectMonth({ id: latest.id, shortCode: latest.shortCode, name: latest.name });
+      setActiveMonthId(latest.id);
       setActiveTab(`monthtab-${latest.id}`);
     }
-  }, [budget.id, budget.months.length]);
+  }, [budget?.id, budget?.months.length]);
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    const m = budget?.months.find((m) => `monthtab-${m.id}` === tabId);
+    if (m) {
+      setActiveMonthId(m.id);
+    }
+  };
 
   function handleAddMonth() {
     const name = formMonth.trim();
-    if (!name) return;
+    if (!name || !budget) return;
+
     const id = uuid();
-    const previousMonth = budget?.months.find((m) => selectedMonth === "" + m.id);
+    const previousMonth = budget.months.find((m) => selectedMonth === m.id.toString());
+
     socket.emit("budgetEvent", {
       source: "frontend",
       entity: "month",
       operation: "create",
-      id: id,
+      id,
       payload: {
         options: {
           copyAccounts: formCopyAccounts,
         },
         month: {
-          name: name,
+          name,
           started: formStarted,
-          position: previousMonth?.position ? previousMonth.position + 1 : (budget?.months?.length ?? 0 + 1),
-          budget: budget?.id,
+          position: previousMonth?.position ? previousMonth.position + 1 : budget.months.length + 1,
+          budget: budget.id,
         },
       },
     });
@@ -79,11 +75,16 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
     setFormStarted(false);
   }
 
+  if (!budget) return null;
+  if (!month) {
+    return <div className="p-4 text-gray-500">No active month selected.</div>;
+  }
+
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex h-full items-center px-4 space-x-2 overflow-x-auto">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
-          {budget.months?.map((month) => (
+          {budget.months.map((month) => (
             <TabsTrigger key={month.id} value={`monthtab-${month.id}`} className="text-xl rounded-xl">
               {month.name}
             </TabsTrigger>
@@ -92,11 +93,8 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
             + Add Month
           </Button>
         </TabsList>
-
-        {budget.months.map((m) => (
-          <MonthTabContent key={m.id} month={m} />
-        ))}
       </Tabs>
+
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent>
           <DialogHeader>
@@ -112,7 +110,6 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
               <Checkbox checked={formCopyAccounts} onCheckedChange={(checked) => setFormCopyAccounts(Boolean(checked))} />
               <Label>Copy accounts from previous month</Label>
             </div>
-
             <div className="flex items-center gap-2">
               <Label>Previous month</Label>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -121,7 +118,7 @@ export default function DesktopBudgetView({ budget, month, onSelectMonth }: Prop
                 </SelectTrigger>
                 <SelectContent>
                   {budget.months.map((month) => (
-                    <SelectItem key={`month-select-${month.id}`} value={"" + month.id}>
+                    <SelectItem key={month.id} value={month.id.toString()}>
                       {month.name}
                     </SelectItem>
                   ))}

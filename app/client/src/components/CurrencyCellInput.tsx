@@ -4,9 +4,10 @@ type Props = {
   value: number;
   onChange: (newValue: number) => void;
   placeholder: string;
+  className?: string;
 };
 
-export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholder }) => {
+export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholder, className }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value.toString());
 
@@ -54,7 +55,7 @@ export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholde
       onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      className="border p-1 w-full text-right"
+      className={`${className ? className : "border p-1 w-full "} text-right`}
     />
   );
 };

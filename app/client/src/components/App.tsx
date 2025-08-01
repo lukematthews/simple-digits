@@ -1,10 +1,9 @@
 import { Route, Routes } from "react-router-dom";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import HomePage from "./HomePage";
-import BudgetApp from "./BudgetApp";
 import SiteHomePage from "./SiteHomePage";
 import AuthFlow from "./AuthFlow";
-import Layout from "./Layout";
+import SimpleDigits from "./new-layout/SimpleDigits";
 
 export function App() {
   useSocketEvents();
@@ -12,13 +11,13 @@ export function App() {
   return (
     <>
       <Routes>
-        <Route element={<Layout />}>
-          <Route path="/b/:shortCode/:monthName" element={<BudgetApp />} />
-          <Route path="/b/:shortCode" element={<BudgetApp />} />
+        <Route>
+          <Route path="/b/:shortCode/:monthName" element={<SimpleDigits />} />
+          <Route path="/b/:shortCode" element={<SimpleDigits />} />
           <Route path="/b" element={<HomePage />} />
         </Route>
         <Route path="/" element={<SiteHomePage />} />
-        <Route path="/login" element={<AuthFlow />} />{" "}
+        <Route path="/login" element={<AuthFlow />} />
       </Routes>
     </>
   );

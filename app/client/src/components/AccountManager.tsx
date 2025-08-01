@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { socket } from "@/lib/socket";
-import { Account, Month, WsEvent } from "@/types";
+import { Account, WsEvent } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { Plus, Check, Trash2 } from "lucide-react";
 import { CurrencyCellInput } from "./CurrencyCellInput";
 import { useAccountsForMonth } from "@/hooks/useAccountsForMonth";
-
-type Props = { month: Month };
+import { useActiveMonth } from "@/hooks/useActiveMonth";
 
 type DraftAccount = {
   id: string;
@@ -24,12 +23,15 @@ const emitSocket = (op: "create" | "update" | "delete", payload: Account) =>
     payload,
   } as WsEvent<Account>);
 
-export default function AccountManager({ month }: Props) {
-  const accounts = useAccountsForMonth(month.id);
+export default function AccountManager() {
+  const [drafts, setDrafts] = useState<DraftAccount[]>([]);
   const updateAccountInStore = useBudgetStore((s) => s.updateAccount);
   const deleteAccountInStore = useBudgetStore((s) => s.deleteAccount);
-
-  const [drafts, setDrafts] = useState<DraftAccount[]>([]);
+  const month = useActiveMonth();
+  const accounts = useAccountsForMonth(month?.id);
+  if (!month) {
+    return <div className="p-4 text-gray-500">No active month selected.</div>;
+  }
 
   // -------- EXISTING HANDLERS --------
   const handleExistingChange = (id: string, field: keyof Account, value: string | number) => {
@@ -101,13 +103,13 @@ export default function AccountManager({ month }: Props) {
       {accounts.map((acc) => (
         <div key={acc.id} className="flex items-center gap-2">
           <input
-            className="border p-1 flex-1"
+            className="min-w-[10ch] w-full px-2 py-1 border rounded"
             value={acc.name}
             placeholder="Account name"
             onChange={(e) => handleExistingChange(acc.id!, "name", e.target.value)}
             onBlur={() => handleExistingBlur(acc.id!)}
           />
-          <CurrencyCellInput placeholder="0.00" value={acc.balance ?? 0} onChange={(v) => handleExistingChange(acc.id!, "balance", v)} />
+          <CurrencyCellInput className="min-w-[10ch] w-full px-2 py-1 border rounded" placeholder="0.00" value={acc.balance ?? 0} onChange={(v) => handleExistingChange(acc.id!, "balance", v)} />
           <button className="p-1 text-red-500 hover:text-red-700" title="Delete" onClick={() => deleteExisting(acc)}>
             <Trash2 size={18} />
           </button>
@@ -117,7 +119,7 @@ export default function AccountManager({ month }: Props) {
       {/* Draft accounts */}
       {drafts.map((draft) => (
         <div key={draft.id} className="flex items-center gap-2">
-          <input className="border p-1 flex-1" value={draft.name} placeholder="Account name" onChange={(e) => updateDraft(draft.id, "name", e.target.value)} />
+          <input className="min-w-[10ch] w-full px-2 py-1 border rounded" value={draft.name} placeholder="Account name" onChange={(e) => updateDraft(draft.id, "name", e.target.value)} />
           <CurrencyCellInput value={draft.balance} placeholder="0.00" onChange={(v) => updateDraft(draft.id, "balance", v)} />
           <button className="p-1 text-green-600 hover:text-green-800" title="Save" onClick={() => saveDraft(draft)}>
             <Check size={18} />
