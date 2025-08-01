@@ -7,6 +7,7 @@ import { socket } from "@/lib/socket";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { format } from "date-fns";
 import { useActiveMonth } from "@/hooks/useActiveMonth";
+import AccountManager from "../AccountManager";
 
 type Props = {
   onAddTransaction: () => void;
@@ -72,19 +73,23 @@ export default function MonthDetail({ onAddTransaction }: Props) {
   return (
     <div className="flex flex-col gap-3">
       {/* Row: Started + Dates */}
-      <div className="flex items-center gap-6 mb-2">
-        <div className="flex items-center gap-2">
-          <Checkbox checked={month.started} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
-          <Label>Started</Label>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Checkbox checked={month.started} onCheckedChange={(checked) => updateStarted(Boolean(checked))} />
+            <Label>Started</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label>Dates</Label>
+            <input type="date" className="border rounded px-2 py-1" value={fromDate} onChange={(e) => handleDateChange("fromDate", e.target.value)} />
+            <span>-</span>
+            <input type="date" className="border rounded px-2 py-1" value={toDate} onChange={(e) => handleDateChange("toDate", e.target.value)} />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Label>Dates</Label>
-          <input type="date" className="border rounded px-2 py-1" value={fromDate} onChange={(e) => handleDateChange("fromDate", e.target.value)} />
-          <span>-</span>
-          <input type="date" className="border rounded px-2 py-1" value={toDate} onChange={(e) => handleDateChange("toDate", e.target.value)} />
+        <div>
+          <AccountManager />
         </div>
       </div>
-
       {/* Row: Balances and Add Transaction */}
       <div className="flex items-center gap-4 mb-2">
         <div className="flex items-center gap-2">
