@@ -3,7 +3,7 @@ import { useSocketEvents } from "@/hooks/useSocketEvents";
 import HomePage from "./HomePage";
 import SiteHomePage from "./SiteHomePage";
 import AuthFlow from "./AuthFlow";
-import SimpleDigits from "./new-layout/SimpleDigits";
+import SimpleDigits from "./desktop/SimpleDigits";
 
 export function App() {
   useSocketEvents();
