@@ -81,7 +81,7 @@ export default function MonthTabs() {
   }
 
   return (
-    <div className="flex h-full items-center px-4 space-x-2 overflow-x-auto">
+    <div className="bg-white flex h-full items-center px-4 space-x-2 overflow-x-auto">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           {budget.months.map((month) => (
