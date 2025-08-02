@@ -1,4 +1,4 @@
-import { Month, WsEvent } from "@/types";
+import { EditableMonthFields, Month, WsEvent } from "@/types";
 import { Checkbox } from "../ui/checkbox";
 import { useEffect } from "react";
 import { Label } from "../ui/label";
@@ -12,8 +12,6 @@ import AccountManager from "../AccountManager";
 type Props = {
   onAddTransaction: () => void;
 };
-
-type EditableMonthFields = Pick<Month, "started" | "fromDate" | "toDate">;
 
 export default function MonthDetail({ onAddTransaction }: Props) {
   const month = useActiveMonth();
