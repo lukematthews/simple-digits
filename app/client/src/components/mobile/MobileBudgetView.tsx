@@ -56,38 +56,26 @@ export default function MobileBudgetView() {
   const newTransactionRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
+  const budgetSummaries = useBudgetStore((s) => s.budgetSummaries);
+  const getBudgetIdByShortCode = useBudgetStore((s) => s.getBudgetIdByShortCode);
+  const loadBudgetSummaries = useBudgetStore((s) => s.loadBudgetSummaries);
+  const loadBudgetById = useBudgetStore((s) => s.loadBudgetById);
+  
   useEffect(() => {
-    if (newTransaction) {
-      setTimeout(() => {
-        newTransactionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50); // slight delay to allow rendering
-    }
-  }, [newTransaction]);
-
-  useEffect(() => {
-    if (monthFromStore) {
-      const updated = {
-        ...monthFromStore,
-        transactions: calculateTransactionBalances(monthFromStore, transactions),
-      };
-      updateMonth(updated);
-    }
-  }, [transactions.length, monthFromStore?.startingBalance]);
-
-  useEffect(() => {
-    const handleMessage = (message: WsEvent<Transaction>) => {
-      if (message.source !== "api") return;
-      if (message.entity !== "transaction") return;
-      if (message.operation === "create") {
-        setNewTransaction(null);
+    const run = async () => {
+      if (budgetSummaries.length === 0) {
+        await loadBudgetSummaries();
       }
     };
-
-    socket.on("budgetEvent", handleMessage);
-    return () => {
-      socket.off("budgetEvent", handleMessage);
-    };
+    run();
   }, []);
+
+  useEffect(() => {
+    if (!shortCode || budgetSummaries.length === 0) return;
+    const id = getBudgetIdByShortCode(shortCode);
+    if (id) loadBudgetById(id);
+  }, [shortCode, budgetSummaries]);
+
 
   useEffect(() => {
     if (!budget || hasSetInitialMonth.current || budget.months.length === 0) return;
