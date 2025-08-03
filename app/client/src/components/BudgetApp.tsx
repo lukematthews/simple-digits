@@ -5,7 +5,7 @@ import { socket } from "@/lib/socket";
 import { calculateMonthBalances } from "@/lib/monthUtils";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import MobileBudgetView from "./MobileBudgetView";
+import MobileBudgetView from "./mobile/MobileBudgetView";
 import LoadingSpinner from "./LoadingSpinner";
 import DesktopBudgetView from "./DesktopBudgetView";
 
