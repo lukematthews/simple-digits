@@ -1,7 +1,7 @@
 // src/components/MobileBudgetView.tsx
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
-import { Budget, Month, Transaction, Account, WsEvent } from "@/types";
+import { Transaction, Account, WsEvent, Month } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
 import TransactionCardMobile from "../transaction/TransactionCardMobile";
@@ -16,6 +16,10 @@ import { v4 as uuid } from "uuid";
 import { socket } from "@/lib/socket";
 import { motion } from "framer-motion";
 import { useRef } from "react";
+import { useActiveMonth } from "@/hooks/useActiveMonth";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { calculateMonthBalances } from "@/lib/monthUtils";
+import Header from "../desktop/Header";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
   const total =
@@ -27,14 +31,16 @@ function sumAccountBalances(accounts: { balance: number | string }[]): string {
   return total.toLocaleString("en-AU", { style: "currency", currency: "AUD" });
 }
 
-interface Props {
-  month: Month | null;
-  budget: Budget;
-  onSelectMonth: (month: Month) => void;
-  onCreateTransaction: (tx: { description: string; amount: number; date: string }) => void;
-}
+export default function MobileBudgetView() {
+  const navigate = useNavigate();
+  const { currentBudget: budget, setActiveMonthId } = useBudgetStore();
+  const month = useActiveMonth();
+  const params = useParams<{ shortCode?: string; monthName?: string }>();
+  const location = useLocation();
+  const shortCode = params.shortCode || "";
+  const monthShortCode = params.monthName;
+  const hasSetInitialMonth = useRef(false);
 
-export default function MobileBudgetView({ month, budget, onSelectMonth }: Props) {
   const [newTransaction, setNewTransaction] = useState<Transaction | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [formMonth, setFormMonth] = useState("");
@@ -82,6 +88,40 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
       socket.off("budgetEvent", handleMessage);
     };
   }, []);
+
+  useEffect(() => {
+    if (!budget || hasSetInitialMonth.current || budget.months.length === 0) return;
+
+    calculateMonthBalances(budget.months);
+
+    if (monthShortCode) {
+      const m = budget.months.find((x) => x.shortCode === monthShortCode);
+      if (m) {
+        setActiveMonthId(m.id);
+        hasSetInitialMonth.current = true;
+      }
+    } else {
+      const startedMonths = budget.months.filter((m) => m.started);
+      const candidateMonths = startedMonths.length > 0 ? startedMonths : budget.months;
+
+      if (candidateMonths.length > 0) {
+        const latest = candidateMonths.reduce((a, b) => (a.position > b.position ? a : b));
+
+        setActiveMonthId(latest.id);
+        navigate(`/b/${shortCode}/${latest.shortCode}`, { replace: true });
+        hasSetInitialMonth.current = true;
+      }
+    }
+  }, [budget, location.pathname]);
+
+  const onSelectMonth = (m: Month) => {
+    if (!budget) {
+      return;
+    }
+    setActiveMonthId(m.id);
+    navigate(`/b/${budget.shortCode}/${m.shortCode}`);
+    document.title = `${budget.name}: ${m.name}`;
+  };
 
   const handleDone = (txn: Transaction) => {
     const event: WsEvent<Transaction> = {
@@ -147,6 +187,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
     setFormStarted(false);
   };
 
+  if (!budget) return <div>No budget selected</div>;
   if (!month) return <div>No month selected</div>;
 
   return (
@@ -191,6 +232,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
         </DialogContent>
       </Dialog>
       <header className="sticky top-0 z-10 bg-blue-100 bg-opacity-80 shadow-sm px-0 py-0 space-y-3">
+        <Header></Header>
         <select
           className="w-full border rounded-md px-3 py-2 text-base"
           name="month-select"
@@ -222,11 +264,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </div>
         </div>
       </header>
-      <main
-        ref={scrollContainerRef}
-        className="overflow-y-auto px-1 pb-24"
-        style={{ height: "calc((var(--vh, 1vh) * 100) - 96px)" }} 
-      >
+      <main ref={scrollContainerRef} className="overflow-y-auto px-1 pb-24" style={{ height: "calc((var(--vh, 1vh) * 100) - 96px)" }}>
         <details open={accountsExpanded} onToggle={(e) => setAccountsExpanded(e.currentTarget.open)} className="mb-4 px-2 relative w-full">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between items-center">
             <span>Accounts</span>

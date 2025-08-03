@@ -7,7 +7,6 @@ import { useBudgetStore } from "@/store/useBudgetStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileBudgetView from "./mobile/MobileBudgetView";
 import LoadingSpinner from "./LoadingSpinner";
-import DesktopBudgetView from "./DesktopBudgetView";
 
 export default function BudgetApp() {
   const navigate = useNavigate();
@@ -96,6 +95,5 @@ export default function BudgetApp() {
   if (isMobile) {
     return <MobileBudgetView budget={budget} month={activeMonth} onSelectMonth={onSelectMonth} onCreateTransaction={onCreateTransaction} />;
   }
-
-  return <DesktopBudgetView budget={budget} month={activeMonth} onSelectMonth={onSelectMonth} onCreateTransaction={onCreateTransaction} />;
+  return <></>;
 }
