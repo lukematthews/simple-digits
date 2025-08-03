@@ -12,7 +12,7 @@ export default function HomePage() {
   }, [loadBudgetSummaries]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex h-screen w-screen flex-col overflow-hidden max-w-screen-xl mx-auto bg-white">
       <div className="flex-1 flex items-end justify-center pb-12">
         <h1 className="text-6xl font-serif font-bold text-gray-800 text-center">Your Budgets</h1>
       </div>

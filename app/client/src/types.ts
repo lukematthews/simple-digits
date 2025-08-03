@@ -47,7 +47,7 @@ export type BudgetSummary = {
   shortCode: string;
 };
 
-export type Role = 'OWNER' | 'EDITOR' | 'VIEWER';
+export type Role = "OWNER" | "EDITOR" | "VIEWER";
 
 export type Store = BudgetSlice & TransactionSlice & MonthSlice & AccountSlice & { reset: () => void };
 
@@ -58,6 +58,8 @@ export interface MonthControlProps {
   setActiveMonth: React.Dispatch<React.SetStateAction<string | null>>;
   setShowTxnModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
+export type EditableMonthFields = Pick<Month, "started" | "fromDate" | "toDate" | "name">;
 
 export type WsEvent<T> =
   | {

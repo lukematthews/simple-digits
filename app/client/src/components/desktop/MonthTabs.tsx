@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { useActiveMonth } from "@/hooks/useActiveMonth";
+import { EditableMonthFields, Month, WsEvent } from "@/types";
 
 export default function MonthTabs() {
   const { currentBudget: budget, setActiveMonthId } = useBudgetStore();
@@ -20,6 +21,9 @@ export default function MonthTabs() {
   const [formCopyAccounts, setFormCopyAccounts] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const month = useActiveMonth();
+  const updateMonth = useBudgetStore((s) => s.updateMonth);
+  const [editingMonthId, setEditingMonthId] = useState<string | null>(null);
+  const [editingMonthName, setEditingMonthName] = useState("");
 
   useEffect(() => {
     if (month?.id) {
@@ -75,18 +79,70 @@ export default function MonthTabs() {
     setFormStarted(false);
   }
 
+  const emitMonthUpdate = (id: string, updates: Partial<EditableMonthFields>) => {
+    const m = budget?.months.find((m) => m.id === id);
+    if (!m) return;
+
+    socket.emit("budgetEvent", {
+      source: "frontend",
+      entity: "month",
+      operation: "update",
+      id,
+      payload: { id, ...updates },
+      updates,
+    } as WsEvent<Month>);
+
+    const updated: Month = {
+      ...m,
+      ...updates,
+      startingBalance: m.startingBalance,
+      closingBalance: m.closingBalance,
+    };
+    updateMonth(updated);
+  };
+
   if (!budget) return null;
   if (!month) {
     return <div className="p-4 text-gray-500">No active month selected.</div>;
   }
 
   return (
-    <div className="flex h-full items-center px-4 space-x-2 overflow-x-auto">
+    <div className="bg-white flex h-full items-center px-4 space-x-2 overflow-x-auto">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           {budget.months.map((month) => (
-            <TabsTrigger key={month.id} value={`monthtab-${month.id}`} className="text-xl rounded-xl">
-              {month.name}
+            <TabsTrigger
+              key={month.id}
+              value={`monthtab-${month.id}`}
+              className="text-xl rounded-xl"
+              onDoubleClick={() => {
+                setEditingMonthId(month.id);
+                setEditingMonthName(month.name);
+              }}
+            >
+              {editingMonthId === month.id ? (
+                <Input
+                  value={editingMonthName}
+                  autoFocus
+                  className="h-6 text-sm px-1"
+                  onChange={(e) => setEditingMonthName(e.target.value)}
+                  onBlur={() => {
+                    if (editingMonthName.trim() && editingMonthName !== month.name) {
+                      emitMonthUpdate(month.id, { name: editingMonthName.trim() });
+                    }
+                    setEditingMonthId(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      (e.target as HTMLInputElement).blur();
+                    } else if (e.key === "Escape") {
+                      setEditingMonthId(null);
+                    }
+                  }}
+                />
+              ) : (
+                month.name
+              )}
             </TabsTrigger>
           ))}
           <Button variant="outline" onClick={() => setShowAddModal(true)}>

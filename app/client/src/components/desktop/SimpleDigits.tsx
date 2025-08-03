@@ -1,5 +1,4 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import AccountManager from "../AccountManager";
 import Header from "./Header";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { useEffect, useRef, useState } from "react";
@@ -106,9 +105,6 @@ export default function SimpleDigits() {
             <TransactionTableView transactions={activeMonth.transactions} newTransaction={newTransaction} clearNewTransaction={() => setNewTransaction(null)}></TransactionTableView>
           </div>
         </main>
-        <aside className="w-[400px] shrink-0 border-l bg-white p-4 overflow-y-auto">
-          <AccountManager />
-        </aside>
       </div>
     </div>
   );

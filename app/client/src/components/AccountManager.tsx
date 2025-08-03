@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { socket } from "@/lib/socket";
 import { Account, WsEvent } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
-import { Plus, Check, Trash2 } from "lucide-react";
+import { Plus, Check, Trash2, ChevronDown } from "lucide-react";
 import { CurrencyCellInput } from "./CurrencyCellInput";
 import { useAccountsForMonth } from "@/hooks/useAccountsForMonth";
 import { useActiveMonth } from "@/hooks/useActiveMonth";
+
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 type DraftAccount = {
   id: string;
@@ -25,15 +27,22 @@ const emitSocket = (op: "create" | "update" | "delete", payload: Account) =>
 
 export default function AccountManager() {
   const [drafts, setDrafts] = useState<DraftAccount[]>([]);
+  const [open, setOpen] = useState(false);
+
   const updateAccountInStore = useBudgetStore((s) => s.updateAccount);
   const deleteAccountInStore = useBudgetStore((s) => s.deleteAccount);
+
   const month = useActiveMonth();
   const accounts = useAccountsForMonth(month?.id);
+
+  const total = useMemo(() => accounts.reduce((sum, acc) => sum + (parseFloat(String(acc.balance)) || 0), 0), [accounts]);
+
   if (!month) {
     return <div className="p-4 text-gray-500">No active month selected.</div>;
   }
 
-  // -------- EXISTING HANDLERS --------
+  // -------- Handlers --------
+
   const handleExistingChange = (id: string, field: keyof Account, value: string | number) => {
     const original = accounts.find((a) => a.id === id);
     if (!original) return;
@@ -43,7 +52,7 @@ export default function AccountManager() {
       [field]: field === "balance" ? parseFloat(value as string) || 0 : value,
     };
     updateAccountInStore(updated);
-    if (updated) emitSocket("update", updated);
+    emitSocket("update", updated);
   };
 
   const handleExistingBlur = (id: string) => {
@@ -56,14 +65,13 @@ export default function AccountManager() {
     emitSocket("delete", acc);
   };
 
-  // -------- DRAFT HANDLERS --------
   const addDraftRow = () =>
     setDrafts((d): DraftAccount[] => [
       ...d,
       {
         id: crypto.randomUUID(),
         name: "",
-        balance: 0, // stays a string
+        balance: 0,
         monthId: month.id,
       },
     ]);
@@ -84,55 +92,62 @@ export default function AccountManager() {
     const numericBalance = parseFloat(String(draft.balance));
 
     setDrafts((d) => d.filter((row) => row.id !== draft.id));
-
     emitSocket("create", {
       ...draft,
-      id: undefined, // backend assigns ID
+      id: undefined,
       balance: isNaN(numericBalance) ? 0 : numericBalance,
     });
   };
 
   const discardDraft = (id: string) => setDrafts((d) => d.filter((row) => row.id !== id));
 
-  // -------- UI --------
   return (
-    <div className="p-4 space-y-4 max-w-2xl mx-auto">
-      <h2 className="text-xl font-semibold mb-2">Accounts</h2>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className="flex items-center gap-2 text-base font-semibold px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">
+          Accounts ${total.toFixed(2)}
+          <ChevronDown size={16} className="text-gray-600" />
+        </button>
+      </PopoverTrigger>
 
-      {/* Existing accounts */}
-      {accounts.map((acc) => (
-        <div key={acc.id} className="flex items-center gap-2">
-          <input
-            className="min-w-[10ch] w-full px-2 py-1 border rounded"
-            value={acc.name}
-            placeholder="Account name"
-            onChange={(e) => handleExistingChange(acc.id!, "name", e.target.value)}
-            onBlur={() => handleExistingBlur(acc.id!)}
-          />
-          <CurrencyCellInput className="min-w-[10ch] w-full px-2 py-1 border rounded" placeholder="0.00" value={acc.balance ?? 0} onChange={(v) => handleExistingChange(acc.id!, "balance", v)} />
-          <button className="p-1 text-red-500 hover:text-red-700" title="Delete" onClick={() => deleteExisting(acc)}>
-            <Trash2 size={18} />
-          </button>
-        </div>
-      ))}
+      <PopoverContent className="w-[480px] p-4 space-y-4" align="end">
+        <h2 className="text-lg font-semibold">Manage Accounts</h2>
 
-      {/* Draft accounts */}
-      {drafts.map((draft) => (
-        <div key={draft.id} className="flex items-center gap-2">
-          <input className="min-w-[10ch] w-full px-2 py-1 border rounded" value={draft.name} placeholder="Account name" onChange={(e) => updateDraft(draft.id, "name", e.target.value)} />
-          <CurrencyCellInput value={draft.balance} placeholder="0.00" onChange={(v) => updateDraft(draft.id, "balance", v)} />
-          <button className="p-1 text-green-600 hover:text-green-800" title="Save" onClick={() => saveDraft(draft)}>
-            <Check size={18} />
-          </button>
-          <button className="p-1 text-red-500 hover:text-red-700" title="Discard" onClick={() => discardDraft(draft.id)}>
-            <Trash2 size={18} />
-          </button>
-        </div>
-      ))}
+        {/* Existing Accounts */}
+        {accounts.map((acc) => (
+          <div key={acc.id} className="flex items-center gap-2">
+            <input
+              className="min-w-[10ch] w-full px-2 py-1 border rounded"
+              value={acc.name}
+              placeholder="Account name"
+              onChange={(e) => handleExistingChange(acc.id!, "name", e.target.value)}
+              onBlur={() => handleExistingBlur(acc.id!)}
+            />
+            <CurrencyCellInput className="min-w-[10ch] w-full px-2 py-1 border rounded" placeholder="0.00" value={acc.balance ?? 0} onChange={(v) => handleExistingChange(acc.id!, "balance", v)} />
+            <button className="p-1 text-red-500 hover:text-red-700" title="Delete" onClick={() => deleteExisting(acc)}>
+              <Trash2 size={18} />
+            </button>
+          </div>
+        ))}
 
-      <button onClick={addDraftRow} className="mt-2 flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600">
-        <Plus size={16} /> Add Account
-      </button>
-    </div>
+        {/* Draft Accounts */}
+        {drafts.map((draft) => (
+          <div key={draft.id} className="flex items-center gap-2">
+            <input className="min-w-[10ch] w-full px-2 py-1 border rounded" value={draft.name} placeholder="Account name" onChange={(e) => updateDraft(draft.id, "name", e.target.value)} />
+            <CurrencyCellInput className="min-w-[10ch] w-full px-2 py-1 border rounded" value={draft.balance} placeholder="0.00" onChange={(v) => updateDraft(draft.id, "balance", v)} />
+            <button className="p-1 text-green-600 hover:text-green-800" title="Save" onClick={() => saveDraft(draft)}>
+              <Check size={18} />
+            </button>
+            <button className="p-1 text-red-500 hover:text-red-700" title="Discard" onClick={() => discardDraft(draft.id)}>
+              <Trash2 size={18} />
+            </button>
+          </div>
+        ))}
+
+        <button onClick={addDraftRow} className="mt-2 flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600">
+          <Plus size={16} /> Add Account
+        </button>
+      </PopoverContent>
+    </Popover>
   );
 }
