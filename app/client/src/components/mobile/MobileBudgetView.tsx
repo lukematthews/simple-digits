@@ -1,10 +1,7 @@
-// src/components/MobileBudgetView.tsx
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { Transaction, Account, WsEvent, Month } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
-import { calculateTransactionBalances } from "@/lib/transactionUtils";
-import TransactionCardMobile from "../transaction/TransactionCardMobile";
 import { CurrencyCellInput } from "../CurrencyCellInput";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,12 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { v4 as uuid } from "uuid";
 import { socket } from "@/lib/socket";
-import { motion } from "framer-motion";
 import { useRef } from "react";
 import { useActiveMonth } from "@/hooks/useActiveMonth";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { calculateMonthBalances } from "@/lib/monthUtils";
 import Header from "../desktop/Header";
+import { calculateTransactionBalances } from "@/lib/transactionUtils";
+import MobileTransactionTableView from "./MobileTransactionTableView";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
   const total =
@@ -50,17 +48,14 @@ export default function MobileBudgetView() {
   const [accountsExpanded, setAccountsExpanded] = useState(false);
 
   const updateMonth = useBudgetStore((s) => s.updateMonth);
-  const monthFromStore = useBudgetStore((s) => s.currentBudget?.months.find((m) => String(m.id) === String(month?.id)));
-  const transactions = monthFromStore?.transactions ?? [];
 
-  const newTransactionRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   const budgetSummaries = useBudgetStore((s) => s.budgetSummaries);
   const getBudgetIdByShortCode = useBudgetStore((s) => s.getBudgetIdByShortCode);
   const loadBudgetSummaries = useBudgetStore((s) => s.loadBudgetSummaries);
   const loadBudgetById = useBudgetStore((s) => s.loadBudgetById);
-  
+
   useEffect(() => {
     const run = async () => {
       if (budgetSummaries.length === 0) {
@@ -75,7 +70,6 @@ export default function MobileBudgetView() {
     const id = getBudgetIdByShortCode(shortCode);
     if (id) loadBudgetById(id);
   }, [shortCode, budgetSummaries]);
-
 
   useEffect(() => {
     if (!budget || hasSetInitialMonth.current || budget.months.length === 0) return;
@@ -101,6 +95,16 @@ export default function MobileBudgetView() {
       }
     }
   }, [budget, location.pathname]);
+
+  useEffect(() => {
+    if (month) {
+      const updated = {
+        ...month,
+        transactions: calculateTransactionBalances(month, month.transactions),
+      };
+      updateMonth(updated);
+    }
+  }, [month?.transactions.length, month?.startingBalance]);
 
   const onSelectMonth = (m: Month) => {
     if (!budget) {
@@ -318,21 +322,19 @@ export default function MobileBudgetView() {
             </div>
           )}
         </details>
-        {transactions.map((txn) => (
-          <TransactionCardMobile
-            key={txn.id}
-            transaction={txn}
-            isNew={newTransaction?.id === txn.id}
-            autoFocus={newTransaction?.id === txn.id}
-            onDiscard={() => setNewTransaction(null)}
-            onDone={handleDone}
-          />
-        ))}
-        {newTransaction && (
-          <motion.div ref={newTransactionRef} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-            <TransactionCardMobile key={newTransaction.id} transaction={newTransaction} isNew autoFocus onDiscard={() => setNewTransaction(null)} onDone={handleDone} />
-          </motion.div>
-        )}
+        <MobileTransactionTableView
+          transactions={month.transactions}
+          showHeader={false}
+          onCreate={(txn) => {
+            updateMonth({
+              ...month,
+              transactions: [...month.transactions, txn],
+            });
+            handleDone(txn);
+          }}
+          newTransaction={newTransaction}
+          clearNewTransaction={() => setNewTransaction(null)}
+        />
       </main>
       <button
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
