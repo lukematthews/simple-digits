@@ -18,6 +18,7 @@ import { calculateMonthBalances } from "@/lib/monthUtils";
 import Header from "../desktop/Header";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
 import MobileTransactionTableView from "./MobileTransactionTableView";
+import { TransactionEditModal } from "./TransactionEditModal";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
   const total =
@@ -39,7 +40,6 @@ export default function MobileBudgetView() {
   const monthShortCode = params.monthName;
   const hasSetInitialMonth = useRef(false);
 
-  const [newTransaction, setNewTransaction] = useState<Transaction | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [formMonth, setFormMonth] = useState("");
   const [formStarted, setFormStarted] = useState(false);
@@ -115,23 +115,6 @@ export default function MobileBudgetView() {
     document.title = `${budget.name}: ${m.name}`;
   };
 
-  const handleDone = (txn: Transaction) => {
-    const event: WsEvent<Transaction> = {
-      source: "frontend",
-      entity: "transaction",
-      operation: "create",
-      payload: {
-        date: txn.date,
-        description: txn.description,
-        amount: txn.amount,
-        paid: txn.paid,
-        monthId: txn.monthId,
-      },
-    };
-    socket.emit("budgetEvent", event);
-    setNewTransaction(null);
-  };
-
   const handleAccountChange = (id: string, field: "name" | "balance", value: string | number) => {
     if (!month) return;
     const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
@@ -177,6 +160,31 @@ export default function MobileBudgetView() {
     setShowAddModal(false);
     setFormMonth("");
     setFormStarted(false);
+  };
+
+  const [showTxnModal, setShowTxnModal] = useState(false);
+  const [txnDraft, setTxnDraft] = useState<Transaction | null>(null);
+
+  const handleAddTransaction = () => {
+    setTxnDraft({
+      id: "-1",
+      description: "",
+      amount: 0,
+      date: new Date().toISOString().substring(0, 10),
+      paid: false,
+      balance: 0,
+      monthId: month!.id,
+    });
+    setShowTxnModal(true);
+  };
+
+  const handleTransactionDone = (txn: Transaction) => {
+    updateMonth({
+      ...month,
+      transactions: [...month!.transactions, txn],
+    });
+    setShowTxnModal(false);
+    setTxnDraft(null);
   };
 
   if (!budget) return <div>No budget selected</div>;
@@ -322,37 +330,26 @@ export default function MobileBudgetView() {
             </div>
           )}
         </details>
-        <MobileTransactionTableView
-          transactions={month.transactions}
-          showHeader={false}
-          onCreate={(txn) => {
-            updateMonth({
-              ...month,
-              transactions: [...month.transactions, txn],
-            });
-            handleDone(txn);
-          }}
-          newTransaction={newTransaction}
-          clearNewTransaction={() => setNewTransaction(null)}
-        />
+        <MobileTransactionTableView transactions={month.transactions} showHeader={false} onCreate={handleTransactionDone} />
       </main>
-      <button
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
-        aria-label="Add Transaction"
-        onClick={() =>
-          setNewTransaction({
-            id: "temp-" + Date.now(),
-            description: "",
-            amount: 0,
-            date: new Date().toISOString().substring(0, 10),
-            paid: false,
-            balance: 0,
-            monthId: month.id,
-          })
-        }
-      >
+      <button className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center" aria-label="Add Transaction" onClick={handleAddTransaction}>
         <Plus size={28} />
       </button>
+      {showTxnModal && txnDraft && (
+        <TransactionEditModal
+          transaction={txnDraft}
+          isNew
+          onClose={() => {
+            setShowTxnModal(false);
+            setTxnDraft(null);
+          }}
+          onDone={handleTransactionDone}
+          onDiscard={() => {
+            setShowTxnModal(false);
+            setTxnDraft(null);
+          }}
+        />
+      )}
     </div>
   );
 }

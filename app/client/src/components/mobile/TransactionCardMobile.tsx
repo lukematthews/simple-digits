@@ -11,10 +11,11 @@ interface Props {
   onDone?: (txn: Transaction) => void;
   onUpdate?: (txn: Transaction) => void;
   onDiscard?: (id: string) => void;
+  onDelete?: (txn: Transaction) => void;
   autoFocus?: boolean;
 }
 
-export default function TransactionCardMobile({ transaction, onDone, isNew, onDiscard, onUpdate }: Props) {
+export default function TransactionCardMobile({ transaction, onDone, isNew, onDiscard, onUpdate, onDelete }: Props) {
   const [showModal, setShowModal] = useState(false);
   const balanceColor = (transaction?.balance ?? 0) >= 0 ? "bg-green-100" : "bg-red-100";
 
@@ -58,6 +59,7 @@ export default function TransactionCardMobile({ transaction, onDone, isNew, onDi
             setShowModal(false);
           }}
           onDiscard={onDiscard}
+          onDelete={onDelete}
         />
       )}
     </>

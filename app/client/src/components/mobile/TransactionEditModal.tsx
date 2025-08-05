@@ -12,9 +12,10 @@ interface Props {
   onDone: (txn: Transaction) => void;
   onClose: () => void;
   onDiscard?: (id: string) => void;
+  onDelete?: (txn: Transaction) => void; // 👈 New prop
 }
 
-export function TransactionEditModal({ transaction, isNew, onDone, onClose, onDiscard }: Props) {
+export function TransactionEditModal({ transaction, isNew, onDone, onClose, onDiscard, onDelete }: Props) {
   const [description, setDescription] = useState(transaction.description);
   const [date, setDate] = useState(transaction.date);
   const [paid, setPaid] = useState(transaction.paid);
@@ -38,27 +39,13 @@ export function TransactionEditModal({ transaction, isNew, onDone, onClose, onDi
         </DialogHeader>
 
         <div className="space-y-3 py-2">
-          <input
-            className="w-full border p-2 rounded text-sm"
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <input className="w-full border p-2 rounded text-sm" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
 
           <div className="flex gap-2">
-            <input
-              type="date"
-              className="border p-2 rounded text-sm w-1/2"
-              value={format(new Date(date), "yyyy-MM-dd")}
-              onChange={(e) => setDate(e.target.value)}
-            />
+            <input type="date" className="border p-2 rounded text-sm w-1/2" value={format(new Date(date), "yyyy-MM-dd")} onChange={(e) => setDate(e.target.value)} />
 
             <div className="w-1/2">
-              <CurrencyCellInput
-                value={amount}
-                onChange={setAmount}
-                placeholder="0.00"
-              />
+              <CurrencyCellInput value={amount} onChange={setAmount} placeholder="0.00" />
             </div>
           </div>
 
@@ -70,9 +57,13 @@ export function TransactionEditModal({ transaction, isNew, onDone, onClose, onDi
 
         <DialogFooter className="flex justify-between mt-4">
           <div className="flex gap-2">
-            {isNew && (
+            {isNew ? (
               <Button variant="ghost" className="text-red-500" onClick={() => onDiscard?.(transaction.id!)}>
                 Discard
+              </Button>
+            ) : (
+              <Button variant="ghost" className="text-red-500" onClick={() => onDelete?.(transaction)}>
+                Delete
               </Button>
             )}
             <Button variant="ghost" onClick={onClose}>

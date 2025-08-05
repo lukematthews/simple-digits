@@ -10,11 +10,12 @@ type Props = {
   transactions: Transaction[];
   showHeader?: boolean;
   onCreate?: (txn: Transaction) => void;
-  newTransaction?: Transaction | null;
-  clearNewTransaction?: () => void;
 };
 
-export default function MobileTransactionTableView({ transactions, showHeader = true, onCreate, newTransaction, clearNewTransaction }: Props) {
+export default function MobileTransactionTableView({
+  transactions,
+  showHeader = true,
+}: Props) {
   const [calculated, setCalculated] = useState<Transaction[]>([]);
   const month = useActiveMonth();
 
@@ -23,44 +24,22 @@ export default function MobileTransactionTableView({ transactions, showHeader = 
     setCalculated(updated);
   }, [transactions]);
 
-  useEffect(() => {
-    const handleMessage = (message: WsEvent<Transaction>) => {
-      if (message.source !== "api") return;
-      if (message.entity !== "transaction") return;
-      if (message.operation === "create") {
-        clearNewTransaction?.();
-      }
-    };
-
-    socket.on("budgetEvent", handleMessage);
-    return () => {
-      socket.off("budgetEvent", handleMessage);
-    };
-  }, []);
-
-  const handleDone = (txn: Transaction) => {
-    const event: WsEvent<Transaction> = {
-      source: "frontend",
-      entity: "transaction",
-      operation: "create",
-      payload: {
-        date: txn.date,
-        description: txn.description,
-        amount: txn.amount,
-        paid: txn.paid,
-        monthId: txn.monthId,
-      },
-    };
-    socket.emit("budgetEvent", event);
-    clearNewTransaction?.();
-    onCreate?.(txn);
-  };
-
   const emitUpdate = (transaction: Transaction) => {
     const event: WsEvent<Transaction> = {
       source: "frontend",
       entity: "transaction",
       operation: "update",
+      id: transaction.id!,
+      payload: transaction,
+    };
+    socket.emit("budgetEvent", event);
+  };
+
+  const handleDelete = (transaction: Transaction) => {
+    const event: WsEvent<Transaction> = {
+      source: "frontend",
+      entity: "transaction",
+      operation: "delete",
       id: transaction.id!,
       payload: transaction,
     };
@@ -77,9 +56,13 @@ export default function MobileTransactionTableView({ transactions, showHeader = 
 
       <div className="flex flex-col overflow-y-auto">
         {calculated.map((txn) => (
-          <TransactionCardMobile key={txn.id} transaction={txn} onUpdate={emitUpdate} />
+          <TransactionCardMobile
+            key={txn.id}
+            transaction={txn}
+            onUpdate={emitUpdate}
+            onDelete={handleDelete}
+          />
         ))}
-        {newTransaction && <TransactionCardMobile key={newTransaction.id} transaction={newTransaction} isNew onDiscard={clearNewTransaction} onDone={handleDone} />}
       </div>
     </div>
   );
