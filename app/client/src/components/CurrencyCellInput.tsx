@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 
 type Props = {
   value: number;
-  onChange: (newValue: number) => void;
+  onChange?: (newValue: number) => void;
+  onBlur?: (newValue: number) => void;
   placeholder: string;
   className?: string;
 };
 
-export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholder, className }) => {
+export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, onBlur, placeholder, className }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value.toString());
 
@@ -23,7 +24,8 @@ export const CurrencyCellInput: React.FC<Props> = ({ value, onChange, placeholde
     setIsEditing(false);
     const parsed = parseFloat(draft);
     if (!isNaN(parsed)) {
-      onChange(parsed);
+      onChange?.(parsed);
+      onBlur?.(parsed);
     } else {
       setDraft(value.toString()); // Revert to last valid value
     }
