@@ -11,9 +11,9 @@ export type AccountSlice = {
   getAccountsByMonthId: (monthId: string) => Account[];
 };
 
-export const createAccountSlice: SliceCreator<AccountSlice> = (set, get) => ({  
-    accounts: [],
-    updateAccount: (updated) =>
+export const createAccountSlice: SliceCreator<AccountSlice> = (set, get) => ({
+  accounts: [],
+  updateAccount: (updated) =>
     set((state: Store) => {
       const budget = state.currentBudget;
       if (!budget) return {};

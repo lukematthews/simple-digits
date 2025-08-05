@@ -304,8 +304,8 @@ export default function MobileBudgetView() {
           <div className="w-full space-y-2 mt-2">
             {month.accounts?.map((a) => (
               <div key={a.id} className="border rounded-md p-2 bg-gray-50 flex justify-between gap-2">
-                <input className="flex-1 border rounded px-2 py-1" value={a.name} onChange={(e) => handleAccountChange(a.id!, "name", e.target.value)} />
-                <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onChange={(v) => handleAccountChange(a.id!, "balance", v)} />
+                <input className="flex-1 border rounded px-2 py-1" value={a.name} onBlur={(e) => handleAccountChange(a.id!, "name", e.target.value)} />
+                <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onBlur={(v) => handleAccountChange(a.id!, "balance", v)} />
               </div>
             ))}
           </div>
