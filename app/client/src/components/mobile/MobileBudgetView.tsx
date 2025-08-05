@@ -178,13 +178,19 @@ export default function MobileBudgetView() {
     setShowTxnModal(true);
   };
 
-  const handleTransactionDone = (txn: Transaction) => {
-    updateMonth({
-      ...month,
-      transactions: [...month!.transactions, txn],
-    });
+  const handleTransactionDone = () => {
     setShowTxnModal(false);
     setTxnDraft(null);
+  };
+
+  const emitCreateTransaction = (transaction: Transaction) => {
+    const event: WsEvent<Transaction> = {
+      source: "frontend",
+      entity: "transaction",
+      operation: "create",
+      payload: transaction,
+    };
+    socket.emit("budgetEvent", event);
   };
 
   if (!budget) return <div>No budget selected</div>;
@@ -343,7 +349,10 @@ export default function MobileBudgetView() {
             setShowTxnModal(false);
             setTxnDraft(null);
           }}
-          onDone={handleTransactionDone}
+          onDone={(trxn) => { 
+            handleTransactionDone(); 
+            emitCreateTransaction(trxn); 
+          }}
           onDiscard={() => {
             setShowTxnModal(false);
             setTxnDraft(null);
