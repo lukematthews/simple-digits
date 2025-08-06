@@ -1,10 +1,7 @@
-// src/components/MobileBudgetView.tsx
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
-import { Budget, Month, Transaction, Account, WsEvent } from "@/types";
+import { Transaction, Account, WsEvent, Month } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
-import { calculateTransactionBalances } from "@/lib/transactionUtils";
-import TransactionCardMobile from "../transaction/TransactionCardMobile";
 import { CurrencyCellInput } from "../CurrencyCellInput";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,8 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { v4 as uuid } from "uuid";
 import { socket } from "@/lib/socket";
-import { motion } from "framer-motion";
 import { useRef } from "react";
+import { useActiveMonth } from "@/hooks/useActiveMonth";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { calculateMonthBalances } from "@/lib/monthUtils";
+import Header from "../desktop/Header";
+import { calculateTransactionBalances } from "@/lib/transactionUtils";
+import MobileTransactionTableView from "./MobileTransactionTableView";
+import { TransactionEditModal } from "./TransactionEditModal";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
   const total =
@@ -27,15 +30,16 @@ function sumAccountBalances(accounts: { balance: number | string }[]): string {
   return total.toLocaleString("en-AU", { style: "currency", currency: "AUD" });
 }
 
-interface Props {
-  month: Month | null;
-  budget: Budget;
-  onSelectMonth: (month: Month) => void;
-  onCreateTransaction: (tx: { description: string; amount: number; date: string }) => void;
-}
+export default function MobileBudgetView() {
+  const navigate = useNavigate();
+  const { currentBudget: budget, setActiveMonthId } = useBudgetStore();
+  const month = useActiveMonth();
+  const params = useParams<{ shortCode?: string; monthName?: string }>();
+  const location = useLocation();
+  const shortCode = params.shortCode || "";
+  const monthShortCode = params.monthName;
+  const hasSetInitialMonth = useRef(false);
 
-export default function MobileBudgetView({ month, budget, onSelectMonth }: Props) {
-  const [newTransaction, setNewTransaction] = useState<Transaction | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [formMonth, setFormMonth] = useState("");
   const [formStarted, setFormStarted] = useState(false);
@@ -44,60 +48,71 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
   const [accountsExpanded, setAccountsExpanded] = useState(false);
 
   const updateMonth = useBudgetStore((s) => s.updateMonth);
-  const monthFromStore = useBudgetStore((s) => s.currentBudget?.months.find((m) => String(m.id) === String(month?.id)));
-  const transactions = monthFromStore?.transactions ?? [];
 
-  const newTransactionRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (newTransaction) {
-      setTimeout(() => {
-        newTransactionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50); // slight delay to allow rendering
-    }
-  }, [newTransaction]);
+  const budgetSummaries = useBudgetStore((s) => s.budgetSummaries);
+  const getBudgetIdByShortCode = useBudgetStore((s) => s.getBudgetIdByShortCode);
+  const loadBudgetSummaries = useBudgetStore((s) => s.loadBudgetSummaries);
+  const loadBudgetById = useBudgetStore((s) => s.loadBudgetById);
 
   useEffect(() => {
-    if (monthFromStore) {
+    const run = async () => {
+      if (budgetSummaries.length === 0) {
+        await loadBudgetSummaries();
+      }
+    };
+    run();
+  }, []);
+
+  useEffect(() => {
+    if (!shortCode || budgetSummaries.length === 0) return;
+    const id = getBudgetIdByShortCode(shortCode);
+    if (id) loadBudgetById(id);
+  }, [shortCode, budgetSummaries]);
+
+  useEffect(() => {
+    if (!budget || hasSetInitialMonth.current || budget.months.length === 0) return;
+
+    calculateMonthBalances(budget.months);
+
+    if (monthShortCode) {
+      const m = budget.months.find((x) => x.shortCode === monthShortCode);
+      if (m) {
+        setActiveMonthId(m.id);
+        hasSetInitialMonth.current = true;
+      }
+    } else {
+      const startedMonths = budget.months.filter((m) => m.started);
+      const candidateMonths = startedMonths.length > 0 ? startedMonths : budget.months;
+
+      if (candidateMonths.length > 0) {
+        const latest = candidateMonths.reduce((a, b) => (a.position > b.position ? a : b));
+
+        setActiveMonthId(latest.id);
+        navigate(`/b/${shortCode}/${latest.shortCode}`, { replace: true });
+        hasSetInitialMonth.current = true;
+      }
+    }
+  }, [budget, location.pathname]);
+
+  useEffect(() => {
+    if (month) {
       const updated = {
-        ...monthFromStore,
-        transactions: calculateTransactionBalances(monthFromStore, transactions),
+        ...month,
+        transactions: calculateTransactionBalances(month, month.transactions),
       };
       updateMonth(updated);
     }
-  }, [transactions.length, monthFromStore?.startingBalance]);
+  }, [month?.transactions.length, month?.startingBalance]);
 
-  useEffect(() => {
-    const handleMessage = (message: WsEvent<Transaction>) => {
-      if (message.source !== "api") return;
-      if (message.entity !== "transaction") return;
-      if (message.operation === "create") {
-        setNewTransaction(null);
-      }
-    };
-
-    socket.on("budgetEvent", handleMessage);
-    return () => {
-      socket.off("budgetEvent", handleMessage);
-    };
-  }, []);
-
-  const handleDone = (txn: Transaction) => {
-    const event: WsEvent<Transaction> = {
-      source: "frontend",
-      entity: "transaction",
-      operation: "create",
-      payload: {
-        date: txn.date,
-        description: txn.description,
-        amount: txn.amount,
-        paid: txn.paid,
-        monthId: txn.monthId,
-      },
-    };
-    socket.emit("budgetEvent", event);
-    setNewTransaction(null);
+  const onSelectMonth = (m: Month) => {
+    if (!budget) {
+      return;
+    }
+    setActiveMonthId(m.id);
+    navigate(`/b/${budget.shortCode}/${m.shortCode}`);
+    document.title = `${budget.name}: ${m.name}`;
   };
 
   const handleAccountChange = (id: string, field: "name" | "balance", value: string | number) => {
@@ -105,7 +120,11 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
     const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
     const updatedMonth = { ...month, accounts: updatedAccounts };
     updateMonth(updatedMonth);
+  };
 
+    const handleAccountChangeEmitEvent = (id: string, field: "name" | "balance", value: string | number) => {
+    if (!month) return;
+    const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
     const account = updatedAccounts.find((a) => a.id === id);
     if (account) {
       const event: WsEvent<Account> = {
@@ -147,6 +166,38 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
     setFormStarted(false);
   };
 
+  const [showTxnModal, setShowTxnModal] = useState(false);
+  const [txnDraft, setTxnDraft] = useState<Transaction | null>(null);
+
+  const handleAddTransaction = () => {
+    setTxnDraft({
+      id: "-1",
+      description: "",
+      amount: 0,
+      date: new Date().toISOString().substring(0, 10),
+      paid: false,
+      balance: 0,
+      monthId: month!.id,
+    });
+    setShowTxnModal(true);
+  };
+
+  const handleTransactionDone = () => {
+    setShowTxnModal(false);
+    setTxnDraft(null);
+  };
+
+  const emitCreateTransaction = (transaction: Transaction) => {
+    const event: WsEvent<Transaction> = {
+      source: "frontend",
+      entity: "transaction",
+      operation: "create",
+      payload: transaction,
+    };
+    socket.emit("budgetEvent", event);
+  };
+
+  if (!budget) return <div>No budget selected</div>;
   if (!month) return <div>No month selected</div>;
 
   return (
@@ -191,6 +242,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
         </DialogContent>
       </Dialog>
       <header className="sticky top-0 z-10 bg-blue-100 bg-opacity-80 shadow-sm px-0 py-0 space-y-3">
+        <Header></Header>
         <select
           className="w-full border rounded-md px-3 py-2 text-base"
           name="month-select"
@@ -222,11 +274,7 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           </div>
         </div>
       </header>
-      <main
-        ref={scrollContainerRef}
-        className="overflow-y-auto px-1 pb-24"
-        style={{ height: "calc((var(--vh, 1vh) * 100) - 96px)" }} 
-      >
+      <main ref={scrollContainerRef} className="overflow-y-auto px-1 pb-24" style={{ height: "calc((var(--vh, 1vh) * 100) - 96px)" }}>
         <details open={accountsExpanded} onToggle={(e) => setAccountsExpanded(e.currentTarget.open)} className="mb-4 px-2 relative w-full">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between items-center">
             <span>Accounts</span>
@@ -260,8 +308,15 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
           <div className="w-full space-y-2 mt-2">
             {month.accounts?.map((a) => (
               <div key={a.id} className="border rounded-md p-2 bg-gray-50 flex justify-between gap-2">
-                <input className="flex-1 border rounded px-2 py-1" value={a.name} onChange={(e) => handleAccountChange(a.id!, "name", e.target.value)} />
-                <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onChange={(v) => handleAccountChange(a.id!, "balance", v)} />
+                <input
+                  className="flex-1 border rounded px-2 py-1"
+                  value={a.name}
+                  onChange={(e) => {
+                    handleAccountChange(a.id!, "name", e.target.value);
+                  }}
+                  onBlur={(e) => handleAccountChange(a.id!, "name", e.target.value)}
+                />
+                <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onChange={(v) => handleAccountChange(a.id!, "balance", v)} onBlur={(v) => handleAccountChangeEmitEvent(a.id!, "balance", v)} />
               </div>
             ))}
           </div>
@@ -292,39 +347,29 @@ export default function MobileBudgetView({ month, budget, onSelectMonth }: Props
             </div>
           )}
         </details>
-        {transactions.map((txn) => (
-          <TransactionCardMobile
-            key={txn.id}
-            transaction={txn}
-            isNew={newTransaction?.id === txn.id}
-            autoFocus={newTransaction?.id === txn.id}
-            onDiscard={() => setNewTransaction(null)}
-            onDone={handleDone}
-          />
-        ))}
-        {newTransaction && (
-          <motion.div ref={newTransactionRef} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-            <TransactionCardMobile key={newTransaction.id} transaction={newTransaction} isNew autoFocus onDiscard={() => setNewTransaction(null)} onDone={handleDone} />
-          </motion.div>
-        )}
+        <MobileTransactionTableView transactions={month.transactions} showHeader={false} onCreate={handleTransactionDone} />
       </main>
-      <button
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
-        aria-label="Add Transaction"
-        onClick={() =>
-          setNewTransaction({
-            id: "temp-" + Date.now(),
-            description: "",
-            amount: 0,
-            date: new Date().toISOString().substring(0, 10),
-            paid: false,
-            balance: 0,
-            monthId: month.id,
-          })
-        }
-      >
+      <button className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center" aria-label="Add Transaction" onClick={handleAddTransaction}>
         <Plus size={28} />
       </button>
+      {showTxnModal && txnDraft && (
+        <TransactionEditModal
+          transaction={txnDraft}
+          isNew
+          onClose={() => {
+            setShowTxnModal(false);
+            setTxnDraft(null);
+          }}
+          onDone={(trxn) => {
+            handleTransactionDone();
+            emitCreateTransaction(trxn);
+          }}
+          onDiscard={() => {
+            setShowTxnModal(false);
+            setTxnDraft(null);
+          }}
+        />
+      )}
     </div>
   );
 }

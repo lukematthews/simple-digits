@@ -52,7 +52,6 @@ export default function AccountManager() {
       [field]: field === "balance" ? parseFloat(value as string) || 0 : value,
     };
     updateAccountInStore(updated);
-    emitSocket("update", updated);
   };
 
   const handleExistingBlur = (id: string) => {

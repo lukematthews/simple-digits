@@ -101,7 +101,9 @@ export default function MonthTabs() {
     updateMonth(updated);
   };
 
-  if (!budget) return null;
+  if (!budget) {
+    return <div className="p-4 text-gray-500">No budget selected.</div>;
+  }
   if (!month) {
     return <div className="p-4 text-gray-500">No active month selected.</div>;
   }

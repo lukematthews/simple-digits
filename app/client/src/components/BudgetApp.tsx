@@ -1,13 +1,12 @@
 // src/components/BudgetApp.tsx
 import { useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { socket } from "@/lib/socket";
+// import { socket } from "@/lib/socket";
 import { calculateMonthBalances } from "@/lib/monthUtils";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileBudgetView from "./mobile/MobileBudgetView";
 import LoadingSpinner from "./LoadingSpinner";
-import DesktopBudgetView from "./DesktopBudgetView";
 
 export default function BudgetApp() {
   const navigate = useNavigate();
@@ -24,10 +23,10 @@ export default function BudgetApp() {
   const isBudgetLoading = useBudgetStore((s) => s.isBudgetLoading);
   const isMobile = useIsMobile();
 
-  const activeMonthId = useBudgetStore((s) => s.activeMonthId);
+  // const activeMonthId = useBudgetStore((s) => s.activeMonthId);
   const setActiveMonthId = useBudgetStore((s) => s.setActiveMonthId);
 
-  const activeMonth = budget?.months.find((m) => m.id === activeMonthId) ?? null;
+  // const activeMonth = budget?.months.find((m) => m.id === activeMonthId) ?? null;
 
   useEffect(() => {
     if (budgetSummaries.length === 0) {
@@ -74,28 +73,27 @@ export default function BudgetApp() {
 
   if (isBudgetLoading || !budget) return <LoadingSpinner />;
 
-  const onSelectMonth = (m: { id: string; shortCode: string; name: string }) => {
-    setActiveMonthId(m.id);
-    navigate(`/b/${shortCode}/${m.shortCode}`);
-    document.title = `${budget.name}: ${m.name}`;
-  };
+  // const onSelectMonth = (m: { id: string; shortCode: string; name: string }) => {
+  //   setActiveMonthId(m.id);
+  //   navigate(`/b/${shortCode}/${m.shortCode}`);
+  //   document.title = `${budget.name}: ${m.name}`;
+  // };
 
-  const onCreateTransaction = (tx: { description: string; amount: number; date: string }) => {
-    socket.emit("budgetEvent", {
-      source: "frontend",
-      entity: "transaction",
-      operation: "create",
-      id: "temp-" + Date.now(),
-      payload: {
-        ...tx,
-        monthId: activeMonth?.id,
-      },
-    });
-  };
+  // const onCreateTransaction = (tx: { description: string; amount: number; date: string }) => {
+  //   socket.emit("budgetEvent", {
+  //     source: "frontend",
+  //     entity: "transaction",
+  //     operation: "create",
+  //     id: "temp-" + Date.now(),
+  //     payload: {
+  //       ...tx,
+  //       monthId: activeMonth?.id,
+  //     },
+  //   });
+  // };
 
   if (isMobile) {
-    return <MobileBudgetView budget={budget} month={activeMonth} onSelectMonth={onSelectMonth} onCreateTransaction={onCreateTransaction} />;
+    return <MobileBudgetView/>;
   }
-
-  return <DesktopBudgetView budget={budget} month={activeMonth} onSelectMonth={onSelectMonth} onCreateTransaction={onCreateTransaction} />;
+  return <></>;
 }
