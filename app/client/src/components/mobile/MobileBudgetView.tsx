@@ -120,7 +120,11 @@ export default function MobileBudgetView() {
     const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
     const updatedMonth = { ...month, accounts: updatedAccounts };
     updateMonth(updatedMonth);
+  };
 
+    const handleAccountChangeEmitEvent = (id: string, field: "name" | "balance", value: string | number) => {
+    if (!month) return;
+    const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
     const account = updatedAccounts.find((a) => a.id === id);
     if (account) {
       const event: WsEvent<Account> = {
@@ -304,8 +308,15 @@ export default function MobileBudgetView() {
           <div className="w-full space-y-2 mt-2">
             {month.accounts?.map((a) => (
               <div key={a.id} className="border rounded-md p-2 bg-gray-50 flex justify-between gap-2">
-                <input className="flex-1 border rounded px-2 py-1" value={a.name} onBlur={(e) => handleAccountChange(a.id!, "name", e.target.value)} />
-                <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onBlur={(v) => handleAccountChange(a.id!, "balance", v)} />
+                <input
+                  className="flex-1 border rounded px-2 py-1"
+                  value={a.name}
+                  onChange={(e) => {
+                    handleAccountChange(a.id!, "name", e.target.value);
+                  }}
+                  onBlur={(e) => handleAccountChange(a.id!, "name", e.target.value)}
+                />
+                <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onChange={(v) => handleAccountChange(a.id!, "balance", v)} onBlur={(v) => handleAccountChangeEmitEvent(a.id!, "balance", v)} />
               </div>
             ))}
           </div>
@@ -349,9 +360,9 @@ export default function MobileBudgetView() {
             setShowTxnModal(false);
             setTxnDraft(null);
           }}
-          onDone={(trxn) => { 
-            handleTransactionDone(); 
-            emitCreateTransaction(trxn); 
+          onDone={(trxn) => {
+            handleTransactionDone();
+            emitCreateTransaction(trxn);
           }}
           onDiscard={() => {
             setShowTxnModal(false);
