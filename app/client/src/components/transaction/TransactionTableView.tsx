@@ -59,7 +59,7 @@ export default function TransactionTableView({ transactions, showHeader = true, 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {showHeader && (
-        <div className="sticky top-0 z-10 bg-white border-b">
+        <div className="sticky top-0 z-10 border-b">
           <TransactionHeader />
         </div>
       )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { CircleChevronDown, Plus } from "lucide-react";
 import { Transaction, Account, WsEvent, Month } from "@/types";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { CurrencyCellInput } from "../CurrencyCellInput";
@@ -122,7 +122,7 @@ export default function MobileBudgetView() {
     updateMonth(updatedMonth);
   };
 
-    const handleAccountChangeEmitEvent = (id: string, field: "name" | "balance", value: string | number) => {
+  const handleAccountChangeEmitEvent = (id: string, field: "name" | "balance", value: string | number) => {
     if (!month) return;
     const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
     const account = updatedAccounts.find((a) => a.id === id);
@@ -243,24 +243,30 @@ export default function MobileBudgetView() {
       </Dialog>
       <header className="sticky top-0 z-10 bg-blue-100 bg-opacity-80 shadow-sm px-0 py-0 space-y-3">
         <Header></Header>
-        <select
-          className="w-full border rounded-md px-3 py-2 text-base"
-          name="month-select"
-          value={month.id}
-          onChange={(e) => {
-            if (e.target.value === "add") return setShowAddModal(true);
-            const m = budget.months.find((x) => x.id.toString() === e.target.value);
-            if (m) onSelectMonth(m);
+        <Select
+          value={month.id.toString()}
+          onValueChange={(value) => {
+            if (value === "add") {
+              setShowAddModal(true);
+            } else {
+              const m = budget.months.find((x) => x.id.toString() === value);
+              if (m) onSelectMonth(m);
+            }
           }}
         >
-          {budget.months.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-          <option value="add">➕ Add Month</option>
-        </select>
-
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select month" />
+            <CircleChevronDown></CircleChevronDown>
+          </SelectTrigger>
+          <SelectContent>
+            {budget.months.map((m) => (
+              <SelectItem key={m.id} value={m.id.toString()}>
+                {m.name}
+              </SelectItem>
+            ))}
+            <SelectItem value="add">➕ Add Month</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex justify-between text-center">
           <div className="w-1/2">
             <p className={`text-md font-semibold py-1 rounded ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
@@ -316,7 +322,12 @@ export default function MobileBudgetView() {
                   }}
                   onBlur={(e) => handleAccountChange(a.id!, "name", e.target.value)}
                 />
-                <CurrencyCellInput placeholder="0.00" value={a.balance ?? ""} onChange={(v) => handleAccountChange(a.id!, "balance", v)} onBlur={(v) => handleAccountChangeEmitEvent(a.id!, "balance", v)} />
+                <CurrencyCellInput
+                  placeholder="0.00"
+                  value={a.balance ?? ""}
+                  onChange={(v) => handleAccountChange(a.id!, "balance", v)}
+                  onBlur={(v) => handleAccountChangeEmitEvent(a.id!, "balance", v)}
+                />
               </div>
             ))}
           </div>

@@ -116,7 +116,7 @@ export default function BudgetWizard({ onCancel }: Props) {
           <div>
             <label className="block text-sm font-medium mb-1 flex justify-between items-center">
               <span>Short Code</span>
-              <label className="flex items-center gap-1 text-xs text-gray-600">
+              <label className="flex items-center gap-1 text-xs">
                 <input type="checkbox" checked={autoShortCode} onChange={() => setAutoShortCode((prev) => !prev)} />
                 Auto-generate
               </label>
@@ -125,7 +125,7 @@ export default function BudgetWizard({ onCancel }: Props) {
               {...register("shortCode")}
               placeholder="Auto‑generated"
               readOnly={autoShortCode}
-              className={autoShortCode ? "bg-gray-100 cursor-not-allowed" : ""}
+              className={autoShortCode ? "cursor-not-allowed" : ""}
               onChange={(e) => setValue("shortCode", e.target.value, { shouldValidate: true })}
             />
           </div>

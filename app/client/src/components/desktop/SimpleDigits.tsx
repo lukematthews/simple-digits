@@ -99,8 +99,8 @@ export default function SimpleDigits() {
         <MonthTabs />
       </div>
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <main className="flex flex-1 min-h-0 overflow-hidden bg-gray-50 p-4">
-          <div className="flex h-full w-full flex-col rounded border bg-white p-4">
+        <main className="flex flex-1 min-h-0 overflow-hidden p-4">
+          <div className="flex h-full w-full flex-col rounded border p-4">
             <MonthDetail onAddTransaction={handleAddTransaction}></MonthDetail>
             <TransactionTableView transactions={activeMonth.transactions} newTransaction={newTransaction} clearNewTransaction={() => setNewTransaction(null)}></TransactionTableView>
           </div>

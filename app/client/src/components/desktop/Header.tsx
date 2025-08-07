@@ -9,11 +9,11 @@ export default function Header() {
   const budget = useBudgetStore((s) => s.currentBudget);
 
   return (
-    <div className="h-20 flex-shrink-0 z-50 bg-white border-b shadow-sm px-4">
+    <div className="h-20 flex-shrink-0 z-50 border-b shadow-sm px-4">
       <div className="flex justify-between items-center h-full">
         <div>
           {isBudgetPage && budget?.name && (
-            <h1 className="text-3xl font-bold text-gray-700">
+            <h1 className="text-3xl font-bold">
               <BudgetSettingsDropdown />
               {budget.name}
             </h1>
@@ -21,7 +21,7 @@ export default function Header() {
         </div>
         <div className="flex items-center gap-x-4">
           <a href="/b">
-            <h2 className="text-2xl font-semibold text-gray-800">Simple Digits</h2>
+            <h2 className="text-2xl font-semibold">Simple Digits</h2>
           </a>
           <ProfileMenu />
         </div>

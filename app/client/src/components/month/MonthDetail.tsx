@@ -93,7 +93,7 @@ export default function MonthDetail({ onAddTransaction }: Props) {
         <div className="flex items-center gap-2">
           <Label>Starting Balance</Label>
           <CurrencyInput
-            className={`border rounded px-2 py-1 ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}
+            className={`text-black border rounded px-2 py-1 ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}
             disabled
             fixedDecimalLength={2}
             decimalScale={2}
@@ -104,7 +104,7 @@ export default function MonthDetail({ onAddTransaction }: Props) {
         <div className="flex items-center gap-2">
           <Label>Closing Balance</Label>
           <CurrencyInput
-            className={`border rounded px-2 py-1 ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}
+            className={`text-black border rounded px-2 py-1 ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}
             disabled
             fixedDecimalLength={2}
             decimalScale={2}
