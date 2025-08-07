@@ -91,7 +91,7 @@ export default function SimpleDigits() {
   if (isBudgetLoading || !budget || !activeMonth) return <LoadingSpinner />;
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden max-w-screen-xl mx-auto">
+    <div className="flex h-screen w-screen flex-col overflow-hidden max-w-screen-xl mx-auto bg-white">
       <div className="h-16 shrink-0 overflow-hidden">
         <Header />
       </div>
