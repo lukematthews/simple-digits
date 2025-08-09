@@ -19,6 +19,7 @@ import Header from "../desktop/Header";
 import { calculateTransactionBalances } from "@/lib/transactionUtils";
 import MobileTransactionTableView from "./MobileTransactionTableView";
 import { TransactionEditModal } from "./TransactionEditModal";
+import { SelectIcon } from "@radix-ui/react-select";
 
 function sumAccountBalances(accounts: { balance: number | string }[]): string {
   const total =
@@ -201,7 +202,7 @@ export default function MobileBudgetView() {
   if (!month) return <div>No month selected</div>;
 
   return (
-    <div className="flex flex-col bg-white w-full" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
+    <div className="flex flex-col w-full" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent>
           <DialogHeader>
@@ -241,7 +242,7 @@ export default function MobileBudgetView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <header className="sticky top-0 z-10 bg-blue-100 bg-opacity-80 shadow-sm px-0 py-0 space-y-3">
+      <header className="sticky top-0 z-10 bg-opacity-80 shadow-sm px-0 py-0 space-y-3">
         <Header></Header>
         <Select
           value={month.id.toString()}
@@ -254,9 +255,11 @@ export default function MobileBudgetView() {
             }
           }}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full [&>svg]:hidden">
             <SelectValue placeholder="Select month" />
-            <CircleChevronDown></CircleChevronDown>
+            <SelectIcon>
+              <CircleChevronDown></CircleChevronDown>
+            </SelectIcon>
           </SelectTrigger>
           <SelectContent>
             {budget.months.map((m) => (
