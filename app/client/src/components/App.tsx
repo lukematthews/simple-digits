@@ -17,7 +17,7 @@ const SimpleDigitsPage = () => {
 
 export function App() {
   useSocketEvents();
-
+  const isMobile = useIsMobile();
   const theme = useThemeStore((state) => state.theme);
 
   useEffect(() => {
@@ -31,9 +31,11 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">
-      <div className="fixed top-4 right-4 z-50">
-        <DarkModeToggle />
-      </div>
+      {!isMobile && (
+        <div className="fixed top-4 right-4 z-50">
+          <DarkModeToggle />
+        </div>
+      )}
       <Routes>
         <Route path="/b/:shortCode/:monthName" element={<SimpleDigitsPage />} />
         <Route path="/b/:shortCode" element={<SimpleDigitsPage />} />

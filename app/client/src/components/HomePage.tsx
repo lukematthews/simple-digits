@@ -2,17 +2,20 @@ import { useBudgetStore } from "@/store/useBudgetStore";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BudgetWizard from "./budget/BudgetWizard";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import BudgetWizardMobile from "./mobile/BudgetWizardMobile";
 
 export default function HomePage() {
   const { budgetSummaries, loadBudgetSummaries } = useBudgetStore();
   const [showWizard, setShowWizard] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     loadBudgetSummaries();
   }, [loadBudgetSummaries]);
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden max-w-screen-xl mx-auto">
+    <div className={ `flex ${!isMobile? 'h-screen' : ''} flex-col overflow-hidden max-w-screen-xl mx-auto`}>
       <div className="flex-1 flex items-end justify-center pb-12">
         <h1 className="text-6xl font-serif font-bold text-center">Your Budgets</h1>
       </div>
@@ -44,7 +47,7 @@ export default function HomePage() {
         </div>
       ) : (
         <div className="mt-6 px-6 my-8">
-          <BudgetWizard onCancel={() => setShowWizard(false)} />
+          { isMobile ? <BudgetWizardMobile onCancel={() => setShowWizard(false)} /> : <BudgetWizard onCancel={() => setShowWizard(false)} /> }
         </div>
       )}
     </div>
