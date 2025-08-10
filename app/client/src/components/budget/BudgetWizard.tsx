@@ -104,67 +104,70 @@ export default function BudgetWizard({ onCancel }: Props) {
   });
 
   return (
-    <Card className="max-w-2xl mx-auto mt-10 p-8 space-y-6">
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Create a budget</h2>
-          <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <Input {...register("name", { required: true })} placeholder="e.g. 2025 Family Budget" />
-            {errors.name && <p className="text-red-500 text-xs mt-1">Name is required</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 flex justify-between items-center">
-              <span>Short Code</span>
-              <label className="flex items-center gap-1 text-xs">
-                <input type="checkbox" checked={autoShortCode} onChange={() => setAutoShortCode((prev) => !prev)} />
-                Auto-generate
+    <div className="min-h-0 flex flex-col flex-1 overflow-y-auto">
+      <Card className="flex-1 max-w-2xl mx-auto my-10 p-8 space-y-6">
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Create a budget</h2>
+            <div>
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <Input {...register("name", { required: true })} placeholder="e.g. 2025 Family Budget" />
+              {errors.name && <p className="text-red-500 text-xs mt-1">Name is required</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 flex justify-between items-center">
+                <span>Short Code</span>
+                <label className="flex items-center gap-1 text-xs">
+                  <input type="checkbox" checked={autoShortCode} onChange={() => setAutoShortCode((prev) => !prev)} />
+                  Auto-generate
+                </label>
               </label>
-            </label>
-            <Input
-              {...register("shortCode")}
-              placeholder="Auto‑generated"
-              readOnly={autoShortCode}
-              className={autoShortCode ? "cursor-not-allowed" : ""}
-              onChange={(e) => setValue("shortCode", e.target.value, { shouldValidate: true })}
-            />
-          </div>
-          {!showMonths && (
-            <div className="flex justify-between gap-2 pt-4">
-              <Button variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <div className="flex gap-2">
-                <Button disabled={!isValid} onClick={addMonthRow}>
-                  Add Months
+              <Input
+                {...register("shortCode")}
+                placeholder="Auto‑generated"
+                readOnly={autoShortCode}
+                className={autoShortCode ? "cursor-not-allowed" : ""}
+                onChange={(e) => setValue("shortCode", e.target.value, { shouldValidate: true })}
+              />
+            </div>
+            {!showMonths && (
+              <div className="flex justify-between gap-2 pt-4">
+                <Button variant="outline" onClick={onCancel}>
+                  Cancel
                 </Button>
-                <Button disabled={!isValid} onClick={onFinish}>
+                <div className="flex gap-2">
+                  <Button disabled={!isValid} onClick={addMonthRow}>
+                    Add Months
+                  </Button>
+                  <Button disabled={!isValid} onClick={onFinish}>
+                    Finish
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Step 2 – Months */}
+          {showMonths && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Months</h2>
+              <MonthReorderEditor
+                months={months}
+                onAdd={addMonthRow}
+                onUpdateName={updateMonthName}
+                onUpdateDates={updateMonthDates}
+                onDelete={deleteMonth}
+                onReorder={(reordered) => setMonths(reordered)}
+              />
+              <div className="pt-6 flex justify-end">
+                <Button onClick={onCancel}>Cancel</Button>
+                <Button className="ml-2" onClick={onFinish}>
                   Finish
                 </Button>
               </div>
             </div>
           )}
-        </div>
-
-        {/* Step 2 – Months */}
-        {showMonths && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Months</h2>
-            <MonthReorderEditor
-              months={months}
-              onAdd={addMonthRow}
-              onUpdateName={updateMonthName}
-              onUpdateDates={updateMonthDates}
-              onDelete={deleteMonth}
-              onReorder={(reordered) => setMonths(reordered)}
-            />
-            <div className="pt-6 flex justify-end">
-              <Button onClick={onCancel}>Cancel</Button>
-              <Button className="ml-2" onClick={onFinish}>Finish</Button>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
