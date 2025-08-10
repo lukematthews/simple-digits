@@ -95,14 +95,12 @@ export function useSocketEvents() {
 
   useEffect(() => {
     const addListeners = () => {
-      console.log("Socket: adding listeners");
       socket.on("budgetEvent", handleBudgetEvent);
       socket.on("account.updated", handleAccountUpdated);
       socket.on("months.reordered", handleMonthsReordered);
     };
 
     const removeListeners = () => {
-      console.log("Socket: removing listeners");
       socket.off("budgetEvent", handleBudgetEvent);
       socket.off("account.updated", handleAccountUpdated);
       socket.off("months.reordered", handleMonthsReordered);
@@ -111,11 +109,11 @@ export function useSocketEvents() {
     addListeners(); // Attach immediately
 
     socket.on("connect", () => {
-      console.log("[SOCKET] Connected (event)");
+      // console.log("[SOCKET] Connected (event)");
     });
 
     socket.on("disconnect", () => {
-      console.warn("[SOCKET] Disconnected");
+      // console.warn("[SOCKET] Disconnected");
     });
 
     return () => {

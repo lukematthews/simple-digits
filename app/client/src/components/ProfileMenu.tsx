@@ -40,7 +40,7 @@ export function ProfileMenu() {
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           sideOffset={5}
-          className="bg-white shadow-lg rounded-lg p-2 w-64 z-50 border"
+          className="shadow-lg rounded-lg p-2 w-64 z-50 border bg-white"
         >
           <div className="px-3 py-2 border-b">
             <p className="font-semibold">{profile.name}</p>

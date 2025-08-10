@@ -29,8 +29,8 @@ export default function AccountManager() {
   const [drafts, setDrafts] = useState<DraftAccount[]>([]);
   const [open, setOpen] = useState(false);
 
-  const updateAccountInStore = useBudgetStore((s) => s.updateAccount);
   const deleteAccountInStore = useBudgetStore((s) => s.deleteAccount);
+  const updateMonth = useBudgetStore((s) => s.updateMonth);
 
   const month = useActiveMonth();
   const accounts = useAccountsForMonth(month?.id);
@@ -43,20 +43,27 @@ export default function AccountManager() {
 
   // -------- Handlers --------
 
-  const handleExistingChange = (id: string, field: keyof Account, value: string | number) => {
-    const original = accounts.find((a) => a.id === id);
-    if (!original) return;
-
-    const updated: Account = {
-      ...original,
-      [field]: field === "balance" ? parseFloat(value as string) || 0 : value,
-    };
-    updateAccountInStore(updated);
+  const handleAccountChange = (id: string, field: "name" | "balance", value: string | number) => {
+    if (!month) return;
+    const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
+    const updatedMonth = { ...month, accounts: updatedAccounts };
+    updateMonth(updatedMonth);
   };
 
-  const handleExistingBlur = (id: string) => {
-    const acc = accounts.find((a) => a.id === id);
-    if (acc) emitSocket("update", acc);
+  const handleAccountChangeEmitEvent = (id: string, field: "name" | "balance", value: string | number) => {
+    if (!month) return;
+    const updatedAccounts = month.accounts.map((a) => (a.id === id ? { ...a, [field]: field === "balance" ? parseFloat(value as string) || 0 : value } : a));
+    const account = updatedAccounts.find((a) => a.id === id);
+    if (account) {
+      const event: WsEvent<Account> = {
+        source: "frontend",
+        entity: "account",
+        operation: "update",
+        id: account.id!,
+        payload: account,
+      };
+      socket.emit("budgetEvent", event);
+    }
   };
 
   const deleteExisting = (acc: Account) => {
@@ -119,10 +126,17 @@ export default function AccountManager() {
               className="min-w-[10ch] w-full px-2 py-1 border rounded"
               value={acc.name}
               placeholder="Account name"
-              onChange={(e) => handleExistingChange(acc.id!, "name", e.target.value)}
-              onBlur={() => handleExistingBlur(acc.id!)}
+              onChange={(e) => {
+                handleAccountChange(acc.id!, "name", e.target.value);
+              }}
+              onBlur={(e) => handleAccountChange(acc.id!, "name", e.target.value)}
             />
-            <CurrencyCellInput className="min-w-[10ch] w-full px-2 py-1 border rounded" placeholder="0.00" value={acc.balance ?? 0} onChange={(v) => handleExistingChange(acc.id!, "balance", v)} />
+            <CurrencyCellInput
+              placeholder="0.00"
+              value={acc.balance ?? ""}
+              onChange={(v) => handleAccountChange(acc.id!, "balance", v)}
+              onBlur={(v) => handleAccountChangeEmitEvent(acc.id!, "balance", v)}
+            />
             <button className="p-1 text-red-500 hover:text-red-700" title="Delete" onClick={() => deleteExisting(acc)}>
               <Trash2 size={18} />
             </button>

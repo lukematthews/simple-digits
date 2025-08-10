@@ -23,7 +23,7 @@ export default function Layout() {
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden w-full" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
       {/* Sticky Navbar */}
-      <div className="h-20 flex-shrink-0 z-50 bg-white border-b shadow-sm px-4">
+      <div className="h-20 flex-shrink-0 z-50 border-b shadow-sm px-4">
         <div className="flex justify-between items-center h-full max-w-screen-xl mx-auto">
           {/* Left: Budget Name (only on /b routes and when loaded) */}
           <div>

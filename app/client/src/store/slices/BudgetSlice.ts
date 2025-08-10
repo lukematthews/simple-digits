@@ -86,15 +86,6 @@ export const createBudgetSlice: SliceCreator<BudgetSlice> = (set, get) => ({
 
       const rawBudget: Budget = await res.json();
 
-      console.log(
-        "Raw month types:",
-        rawBudget.months.map((m) => ({
-          id: m.id,
-          startingBalance: m.startingBalance,
-          type: typeof m.startingBalance,
-        }))
-      );
-
       // Sort months by position
       const sortedBudget: Budget = {
         ...rawBudget,

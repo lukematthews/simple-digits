@@ -37,7 +37,7 @@ export function MonthReorderEditor({ months, onAdd, onUpdateName, onUpdateDates,
   return (
     <div className="space-y-4">
       {months.map((month, idx) => (
-        <motion.div key={month.id} layout className="flex flex-col gap-2 border rounded-lg p-4 bg-white shadow-sm">
+        <motion.div key={month.id} layout className="flex flex-col gap-2 border rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-2">
             <Input value={month.name} onChange={(e) => onUpdateName(month.id, e.target.value)} className="flex-1" placeholder="Month name" />
             <Button variant="outline" size="icon" onClick={() => move(month.id, -1)} disabled={idx === 0} title="Move up">

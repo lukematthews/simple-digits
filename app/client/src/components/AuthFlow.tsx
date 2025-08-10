@@ -64,7 +64,7 @@ export default function AuthFlow() {
   };
 
   return (
-    <div className="max-w-sm mx-auto mt-20 p-4 border rounded-xl shadow bg-white space-y-4">
+    <div className="max-w-sm mx-auto mt-20 p-4 border rounded-xl shadow space-y-4">
       <h1 className="text-2xl font-semibold text-center">Sign in to Simple Digits</h1>
 
       {stage === 'initial' && (
@@ -73,7 +73,7 @@ export default function AuthFlow() {
             Continue with Google
           </Button>
 
-          <div className="text-center text-gray-500 text-sm">or</div>
+          <div className="text-center text-sm">or</div>
 
           <Input
             placeholder="Enter your email"
@@ -89,7 +89,7 @@ export default function AuthFlow() {
 
       {stage === 'login' && provider === 'email' && (
         <>
-          <p className="text-sm text-gray-600">Welcome back! Enter your password to sign in.</p>
+          <p className="text-sm">Welcome back! Enter your password to sign in.</p>
           <Input
             type="password"
             placeholder="Password"
@@ -103,7 +103,7 @@ export default function AuthFlow() {
 
       {stage === 'signup' && provider === 'email' && (
         <>
-          <p className="text-sm text-gray-600">Looks like you're new. Let's get you set up.</p>
+          <p className="text-sm">Looks like you're new. Let's get you set up.</p>
           <Input
             placeholder="Your name"
             value={name}
@@ -122,7 +122,7 @@ export default function AuthFlow() {
       )}
 
       {stage === 'redirect-oauth' && provider && (
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm">
           Redirecting to {provider} login...
         </p>
       )}

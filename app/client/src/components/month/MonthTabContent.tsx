@@ -80,7 +80,7 @@ export default function MonthTabContent({ month }: Props) {
             <MonthDetail key={`month-detail-${month.id}`} onAddTransaction={handleAdd} />
           </div>
           <div className="flex flex-col h-full overflow-hidden">
-            <div className="sticky top-0 z-10 bg-white border-b">
+            <div className="sticky top-0 z-10 border-b">
               <TransactionHeader />
             </div>
             {month.transactions?.map((txn) => <TransactionCard key={txn.id} transaction={txn} />)}

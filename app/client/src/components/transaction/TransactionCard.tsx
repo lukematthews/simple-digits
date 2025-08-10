@@ -59,7 +59,7 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
   };
 
   return (
-    <Card key={transaction.id} className="mx-1 px-0 py-1 mb-0 hover:bg-gray-100 transition-colors duration-200">
+    <Card key={transaction.id} className="mx-1 px-0 py-1 mb-0 hover:bg-gray-100 hover:text-black transition-colors duration-200">
       <CardContent className="px-3 py-1">
         <div className="grid grid-cols-[1fr_130px_7rem_60px_7rem_32px] items-center gap-x-2">
           {/* Description */}
@@ -120,7 +120,7 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
             disabled
             readOnly
             value={formatCurrency(transaction.balance ?? 0)}
-            className={`w-full border p-1 text-sm text-right font-semibold rounded cursor-not-allowed ${transaction.balance! >= 0 ? "bg-green-100" : "bg-red-100"}`}
+            className={`w-full border p-1 text-sm text-right font-semibold rounded cursor-not-allowed text-black ${transaction.balance! >= 0 ? "bg-green-100" : "bg-red-100"}`}
           />
           <div className="flex items-center space-x-1 justify-end">
             {isNew ? (
