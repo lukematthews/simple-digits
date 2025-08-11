@@ -15,7 +15,7 @@ export default function BottomFixedCurrencyNumpad({
   currency = "USD",
   locale = "en-US",
 }: Props) {
-  const [rawValue, setRawValue] = useState<string>("0"); // user input string
+  const [rawValue, setRawValue] = useState<string>("0");
   const [isNegative, setIsNegative] = useState<boolean>(initialValue < 0);
   const [hasDecimal, setHasDecimal] = useState<boolean>(false);
   const [visible, setVisible] = useState<boolean>(false);
@@ -24,7 +24,6 @@ export default function BottomFixedCurrencyNumpad({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize rawValue from initialValue prop
   useEffect(() => {
     const absVal = Math.abs(initialValue);
     setIsNegative(initialValue < 0);
@@ -115,13 +114,11 @@ export default function BottomFixedCurrencyNumpad({
     });
   }
 
-  // Show keypad on input focus
   function handleFocus() {
     setIsFocused(true);
     setVisible(true);
   }
 
-  // Hide keypad on click outside container
   useEffect(() => {
     function handleClickOutside(event: Event) {
       if (
@@ -143,6 +140,13 @@ export default function BottomFixedCurrencyNumpad({
       document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [visible, onClose]);
+
+  function handleDone() {
+    setVisible(false);
+    setIsFocused(false);
+    onClose?.();
+    if (inputRef.current) inputRef.current.blur();
+  }
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
@@ -188,7 +192,7 @@ export default function BottomFixedCurrencyNumpad({
           role="application"
           aria-label="Numeric keypad"
         >
-          {[7,8,9,4,5,6,1,2,3].map((d) => (
+          {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((d) => (
             <button
               key={d}
               type="button"
@@ -234,6 +238,20 @@ export default function BottomFixedCurrencyNumpad({
             aria-label="Backspace"
           >
             ⌫
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDone}
+            style={{
+              ...btnStyle,
+              gridColumn: "span 2",
+              backgroundColor: "#1e90ff",
+              fontWeight: "bold",
+            }}
+            aria-label="Done"
+          >
+            Done
           </button>
         </div>
       )}
