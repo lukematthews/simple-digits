@@ -8,74 +8,99 @@ interface Props {
   locale?: string;
 }
 
-export default function BottomFixedCurrencyNumpad({
-  value: initialValue = 0,
-  onChange,
-  onClose,
-  currency = "USD",
-  locale = "en-US",
-}: Props) {
-  const [rawValue, setRawValue] = useState<string>("0");
-  const [isNegative, setIsNegative] = useState<boolean>(initialValue < 0);
-  const [hasDecimal, setHasDecimal] = useState<boolean>(false);
-  const [visible, setVisible] = useState<boolean>(false);
-  const [isFocused, setIsFocused] = useState<boolean>(false);
-
+export default function BottomFixedCurrencyNumpad({ value = 0, onChange, onClose, currency = "USD", locale = "en-US" }: Props) {
+  const [rawValue, setRawValue] = useState("0");
+  const [isNegative, setIsNegative] = useState(value < 0);
+  const [hasDecimal, setHasDecimal] = useState(false);
+  const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Sync external value to internal rawValue only if not focused (to avoid overwriting user typing)
   useEffect(() => {
-    const absVal = Math.abs(initialValue);
-    setIsNegative(initialValue < 0);
-    const asStr = absVal.toFixed(2);
-    if (asStr.includes(".")) {
-      const [intPart, decPart] = asStr.split(".");
-      setRawValue(decPart === "00" ? intPart : asStr);
-      setHasDecimal(decPart !== "00");
-    } else {
-      setRawValue(absVal.toString());
-      setHasDecimal(false);
+    if (!focused) {
+      const absVal = Math.abs(value);
+      const strVal = absVal.toString();
+      if (strVal.includes(".")) {
+        const [intPart, decPart] = strVal.split(".");
+        if (decPart.length > 0) {
+          setRawValue(absVal.toFixed(decPart.length));
+          setHasDecimal(true);
+        } else {
+          setRawValue(intPart);
+          setHasDecimal(false);
+        }
+      } else {
+        setRawValue(strVal);
+        setHasDecimal(false);
+      }
+      setIsNegative(value < 0);
     }
-  }, [initialValue]);
+  }, [value, focused]);
 
-  function formatCurrency(value: number | string): string {
-    if (value === "" || isNaN(Number(value))) return "";
+  function formatCurrency(val: string | number) {
+    let num = typeof val === "string" ? Number(val) : val;
+    if (isNaN(num)) return "";
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(Number(value));
+    }).format(num);
   }
 
-  function formatDisplay(valueStr: string): string {
-    if (valueStr === "") return "0";
-
-    const num = Number(valueStr);
-    if (isNaN(num)) return "0";
-
+  function formatDisplay(val: string) {
     if (!hasDecimal) {
+      // integer only - format with locale commas
+      const num = Number(val);
+      if (isNaN(num)) return "0";
       return num.toLocaleString(locale);
+    }
+    // decimal present
+    if (val.endsWith(".")) {
+      // show trailing decimal point
+      return val;
+    }
+    const parts = val.split(".");
+    const intPart = Number(parts[0]).toLocaleString(locale);
+    const decPart = parts[1]?.slice(0, 2) ?? "";
+    return decPart.length > 0 ? `${intPart}.${decPart}` : `${intPart}.`;
+  }
+
+  function updateValue(newRaw: string, newHasDecimal: boolean) {
+    // Clean leading zeros from integer part, but keep decimal intact
+    let cleanRaw = newRaw;
+    if (!newHasDecimal) {
+      cleanRaw = cleanRaw.replace(/^0+(?=\d)/, "") || "0";
     } else {
-      const parts = valueStr.split(".");
-      const intPart = Number(parts[0]).toLocaleString(locale);
-      const decPart = parts[1]?.slice(0, 2) || "";
-      return decPart.length > 0 ? `${intPart}.${decPart}` : intPart;
+      const [intPart, decPart] = cleanRaw.split(".");
+      const cleanInt = intPart.replace(/^0+(?=\d)/, "") || "0";
+      cleanRaw = decPart !== undefined ? `${cleanInt}.${decPart}` : cleanInt;
+    }
+
+    setRawValue(cleanRaw);
+    setHasDecimal(newHasDecimal);
+
+    // Notify parent if valid number (but allow raw ending with '.' without notifying)
+    if (cleanRaw === "" || cleanRaw === "." || cleanRaw.endsWith(".")) {
+      return;
+    }
+    const numeric = Number(cleanRaw);
+    if (!isNaN(numeric)) {
+      onChange?.((isNegative ? -1 : 1) * numeric);
     }
   }
 
-  function updateValue(newRawValue: string, newHasDecimal: boolean) {
-    setRawValue(newRawValue);
-    setHasDecimal(newHasDecimal);
-    const numeric = parseFloat(newRawValue);
-    onChange?.((isNegative ? -1 : 1) * (isNaN(numeric) ? 0 : numeric));
-  }
-
-  function handleDigit(digit: string) {
+  function onDigit(digit: string) {
     if (hasDecimal) {
       const parts = rawValue.split(".");
-      if (parts.length === 2 && parts[1].length >= 2) return;
-      updateValue(rawValue + digit, true);
+      if (parts.length === 2) {
+        if (parts[1].length >= 2) return; // max 2 decimals
+        updateValue(rawValue + digit, true);
+      } else {
+        // fallback just in case
+        updateValue(rawValue + digit, true);
+      }
     } else {
       if (rawValue === "0") {
         updateValue(digit, false);
@@ -85,68 +110,67 @@ export default function BottomFixedCurrencyNumpad({
     }
   }
 
-  function handleDecimal() {
+  function onDecimal() {
     if (!hasDecimal) {
       updateValue(rawValue + ".", true);
     }
   }
 
-  function handleBackspace() {
-    if (rawValue.length === 1) {
+  function onBackspace() {
+    if (rawValue.length <= 1) {
       updateValue("0", false);
       setHasDecimal(false);
     } else {
       let newVal = rawValue.slice(0, -1);
       if (newVal.endsWith(".")) {
-        newVal = newVal.slice(0, -1);
+        setHasDecimal(true);
+      } else {
+        setHasDecimal(newVal.includes("."));
+      }
+      if (newVal === "") {
+        newVal = "0";
         setHasDecimal(false);
       }
       updateValue(newVal, newVal.includes("."));
     }
   }
 
-  function toggleSign() {
-    setIsNegative((v) => {
-      const newNeg = !v;
-      const numeric = parseFloat(rawValue);
+  function onToggleSign() {
+    setIsNegative((neg) => {
+      const newNeg = !neg;
+      const numeric = Number(rawValue);
       onChange?.(newNeg ? -numeric : numeric);
       return newNeg;
     });
   }
 
-  function handleFocus() {
-    setIsFocused(true);
-    setVisible(true);
+  function onFocus() {
+    setFocused(true);
+  }
+
+  function onDone() {
+    setFocused(false);
+    onClose?.();
+    inputRef.current?.blur();
   }
 
   useEffect(() => {
-    function handleClickOutside(event: Event) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setVisible(false);
-        setIsFocused(false);
+    function onClickOutside(event: Event) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setFocused(false);
         onClose?.();
-        if (inputRef.current) inputRef.current.blur();
+        inputRef.current?.blur();
       }
     }
-    if (visible) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
+    if (focused) {
+      document.addEventListener("mousedown", onClickOutside);
+      document.addEventListener("touchstart", onClickOutside);
     }
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("touchstart", onClickOutside);
     };
-  }, [visible, onClose]);
-
-  function handleDone() {
-    setVisible(false);
-    setIsFocused(false);
-    onClose?.();
-    if (inputRef.current) inputRef.current.blur();
-  }
+  }, [focused, onClose]);
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
@@ -154,13 +178,8 @@ export default function BottomFixedCurrencyNumpad({
         ref={inputRef}
         type="text"
         readOnly
-        onFocus={handleFocus}
-        value={
-          (isNegative ? "-" : "") +
-          (isFocused
-            ? formatDisplay(rawValue)
-            : formatCurrency(parseFloat(rawValue)))
-        }
+        onFocus={onFocus}
+        value={(isNegative ? "-" : "") + (focused ? formatDisplay(rawValue) : formatCurrency(rawValue))}
         style={{
           fontSize: 20,
           padding: 12,
@@ -174,7 +193,7 @@ export default function BottomFixedCurrencyNumpad({
         aria-label="Currency input"
       />
 
-      {visible && (
+      {focused && (
         <div
           style={{
             position: "fixed",
@@ -192,65 +211,24 @@ export default function BottomFixedCurrencyNumpad({
           role="application"
           aria-label="Numeric keypad"
         >
-          {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => handleDigit(d.toString())}
-              style={btnStyle}
-              aria-label={`Number ${d}`}
-            >
-              {d}
+          {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
+            <button key={num} type="button" onClick={() => onDigit(num.toString())} style={btnStyle} aria-label={`Number ${num}`}>
+              {num}
             </button>
           ))}
-
-          <button
-            type="button"
-            onClick={toggleSign}
-            style={btnStyle}
-            aria-label="Toggle positive negative"
-          >
+          <button type="button" onClick={onToggleSign} style={btnStyle} aria-label="Toggle positive negative">
             ±
           </button>
-
-          <button
-            type="button"
-            onClick={() => handleDigit("0")}
-            style={btnStyle}
-            aria-label="Number 0"
-          >
+          <button type="button" onClick={() => onDigit("0")} style={btnStyle} aria-label="Number 0">
             0
           </button>
-
-          <button
-            type="button"
-            onClick={handleDecimal}
-            style={btnStyle}
-            aria-label="Decimal point"
-          >
+          <button type="button" onClick={onDecimal} style={btnStyle} aria-label="Decimal point">
             .
           </button>
-
-          <button
-            type="button"
-            onClick={handleBackspace}
-            style={btnStyle}
-            aria-label="Backspace"
-          >
+          <button type="button" onClick={onBackspace} style={btnStyle} aria-label="Backspace">
             ⌫
           </button>
-
-          <button
-            type="button"
-            onClick={handleDone}
-            style={{
-              ...btnStyle,
-              gridColumn: "span 2",
-              backgroundColor: "#1e90ff",
-              fontWeight: "bold",
-            }}
-            aria-label="Done"
-          >
+          <button type="button" onClick={onDone} style={{ ...btnStyle, gridColumn: "span 2", backgroundColor: "#1e90ff", fontWeight: "bold" }} aria-label="Done">
             Done
           </button>
         </div>
