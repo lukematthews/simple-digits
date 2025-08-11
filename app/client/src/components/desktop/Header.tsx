@@ -1,3 +1,4 @@
+// Header.tsx
 import { useLocation } from "react-router-dom";
 import { BudgetSettingsDropdown } from "@/components/budget/settings/BudgetSettingsDropdown";
 import { ProfileMenu } from "@/components/ProfileMenu";
@@ -13,10 +14,7 @@ export default function Header() {
       <div className="flex justify-between items-center h-full">
         <div>
           {isBudgetPage && budget?.name && (
-            <h1 className="text-3xl font-bold">
-              <BudgetSettingsDropdown />
-              {budget.name}
-            </h1>
+            <BudgetSettingsDropdown budgetName={budget.name} />
           )}
         </div>
         <div className="flex items-center gap-x-4">

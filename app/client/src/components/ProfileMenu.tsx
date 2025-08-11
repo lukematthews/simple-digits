@@ -1,12 +1,12 @@
 import { WS_URL } from "@/config";
-import { resetAllStores, useBudgetStore } from "@/store/useBudgetStore";
+import { resetAllStores } from "@/store/useBudgetStore";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { DarkModeMenuItem } from "./DarkModeMenuItem";
 
 export function ProfileMenu() {
   const [profile, setProfile] = useState<{ name: string; email: string; picture?: string } | null>(null);
-  const budgets = useBudgetStore((s) => s.budgetSummaries);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,16 +41,7 @@ export function ProfileMenu() {
             <p className="font-semibold">{profile.name}</p>
             <p className="text-sm text-gray-600">{profile.email}</p>
           </div>
-
-          <div className="px-3 py-2 border-b">
-            <p className="text-xs text-gray-500 uppercase mb-1">Budgets</p>
-            {budgets.map((budget) => (
-              <DropdownMenu.Item key={budget.id} onSelect={() => navigate(`/b/${budget.shortCode}`)} className="cursor-pointer px-2 py-1 rounded hover:bg-gray-100">
-                {budget.name}
-              </DropdownMenu.Item>
-            ))}
-          </div>
-
+          <DarkModeMenuItem></DarkModeMenuItem>
           <DropdownMenu.Item onSelect={logout} className="text-red-600 cursor-pointer px-3 py-2 hover:bg-red-100">
             Log out
           </DropdownMenu.Item>
