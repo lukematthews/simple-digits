@@ -39,7 +39,7 @@ export default function BottomFixedCurrencyNumpad({ value = 0, onChange, onClose
   }, [value, focused]);
 
   function formatCurrency(val: string | number) {
-    let num = typeof val === "string" ? Number(val) : val;
+    const num = typeof val === "string" ? Number(val) : val;
     if (isNaN(num)) return "";
     return new Intl.NumberFormat(locale, {
       style: "currency",
