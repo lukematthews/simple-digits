@@ -59,17 +59,17 @@ export default function MobileTransactionTableView({ transactions, showHeader = 
   })();
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full">
       {showHeader && (
         <div className="sticky top-0 z-10 bg-white border-b">
           <TransactionHeader />
         </div>
       )}
 
-      <div className="flex flex-col overflow-y-auto">
+      <div className="flex flex-col">
         {[...groupedTransactions.entries()].map(([date, txns]) => (
           <section key={date} className="mb-4">
-            <h3 className="px-4 py-2 font-semibold sticky top-0 bg-white border-b">{format(date, 'd MMMM yyyy')}</h3>
+            <h3 className="px-4 py-2 font-semibold sticky top-0 border-b">{format(date, 'd MMMM yyyy')}</h3>
             {txns.map((txn) => (
               <TransactionCardMobile key={txn.id} transaction={txn} onUpdate={emitUpdate} onDelete={handleDelete} />
             ))}

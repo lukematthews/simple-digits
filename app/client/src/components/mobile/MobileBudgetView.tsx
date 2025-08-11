@@ -202,7 +202,7 @@ export default function MobileBudgetView() {
   if (!month) return <div>No month selected</div>;
 
   return (
-    <div className="flex flex-col w-full" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
+    <div className="flex flex-col w-full px-2" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent>
           <DialogHeader>
@@ -242,7 +242,7 @@ export default function MobileBudgetView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <header className="sticky top-0 z-10 bg-opacity-80 shadow-sm px-0 py-0 space-y-3">
+      <header className="bg-background sticky top-0 z-10 bg-opacity-80 shadow-sm px-0 py-0 space-y-3">
         <Header></Header>
         <Select
           value={month.id.toString()}
@@ -283,10 +283,14 @@ export default function MobileBudgetView() {
           </div>
         </div>
       </header>
-      <main ref={scrollContainerRef} className="overflow-y-auto px-1 pb-24" style={{ height: "calc((var(--vh, 1vh) * 100) - 96px)" }}>
+      <main ref={scrollContainerRef} className="pb-24">
         <details open={accountsExpanded} onToggle={(e) => setAccountsExpanded(e.currentTarget.open)} className="mb-4 px-2 relative w-full">
           <summary className="cursor-pointer py-2 font-medium text-lg border-b flex justify-between items-center">
-            <span>Accounts</span>
+            <span className="flex items-center whitespace-nowrap">
+              Accounts
+              <CircleChevronDown className="ml-2 h-5 w-5 text-muted-foreground" />
+            </span>
+
             {!month.accounts || month.accounts.length === 0 ? (
               <button
                 onClick={() => {
@@ -316,7 +320,7 @@ export default function MobileBudgetView() {
           </summary>
           <div className="w-full space-y-2 mt-2">
             {month.accounts?.map((a) => (
-              <div key={a.id} className="border rounded-md p-2 bg-gray-50 flex justify-between gap-2">
+              <div key={a.id} className="border rounded-md p-2 flex justify-between gap-2">
                 <input
                   className="flex-1 border rounded px-2 py-1"
                   value={a.name}

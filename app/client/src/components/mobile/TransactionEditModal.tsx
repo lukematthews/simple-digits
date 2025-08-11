@@ -19,6 +19,7 @@ export function TransactionEditModal({ transaction, isNew, onDone, onClose, onDi
   const [date, setDate] = useState(transaction.date);
   const [paid, setPaid] = useState(transaction.paid);
   const [amount, setAmount] = useState(transaction.amount);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDone = () => {
     onDone({
@@ -28,6 +29,13 @@ export function TransactionEditModal({ transaction, isNew, onDone, onClose, onDi
       paid,
       amount,
     });
+  };
+
+  const confirmDelete = () => {
+    if (onDelete) {
+      onDelete(transaction);
+    }
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -55,24 +63,45 @@ export function TransactionEditModal({ transaction, isNew, onDone, onClose, onDi
           {paid && <Check className="h-6 w-6" />}
           Paid
         </Button>
+
+        <div className="flex justify-between mt-4">
+          <div className="flex gap-2">
+            {isNew ? (
+              <Button variant="ghost" className="text-red-500" onClick={() => onDiscard?.(transaction.id!)}>
+                Discard
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                className="text-red-500 flex items-center gap-1"
+                onClick={() => setShowDeleteConfirm(true)} // Open confirmation modal
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            )}
+          </div>
+          <Button onClick={handleDone}>Done</Button>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-4 flex justify-between border-t">
-        <div className="flex gap-2">
-          {isNew ? (
-            <Button variant="ghost" className="text-red-500" onClick={() => onDiscard?.(transaction.id!)}>
-              Discard
-            </Button>
-          ) : (
-            <Button variant="ghost" className="text-red-500 flex items-center gap-1" onClick={() => onDelete?.(transaction)}>
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-background rounded-lg p-6 w-80 max-w-full">
+            <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
+            <p className="mb-6">Are you sure you want to delete this transaction?</p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                Delete
+              </Button>
+            </div>
+          </div>
         </div>
-        <Button onClick={handleDone}>Done</Button>
-      </div>
+      )}
     </div>
   );
 }
