@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { CurrencyCellInput } from "@/components/CurrencyCellInput";
 import { Transaction } from "@/types";
 import { Check, Trash2, X } from "lucide-react";
+import BottomFixedCurrencyNumpad from "./BottomFixedCurrencyKeypad";
 
 interface Props {
   transaction: Transaction;
@@ -47,7 +47,7 @@ export function TransactionEditModal({ transaction, isNew, onDone, onClose, onDi
         <div className="flex gap-2">
           <input type="date" className="border p-2 rounded text-sm w-1/2" value={format(new Date(date), "yyyy-MM-dd")} onChange={(e) => setDate(e.target.value)} />
           <div className="w-1/2">
-            <CurrencyCellInput value={amount} onChange={setAmount} placeholder="0.00" />
+            <BottomFixedCurrencyNumpad value={amount} onChange={setAmount} onClose={() => console.log("Numpad closed")} />
           </div>
         </div>
 
