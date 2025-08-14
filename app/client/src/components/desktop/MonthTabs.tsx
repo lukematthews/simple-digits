@@ -109,50 +109,57 @@ export default function MonthTabs() {
   }
 
   return (
-    <div className="flex h-full items-center px-4 space-x-2 overflow-x-auto">
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList>
-          {budget.months.map((month) => (
-            <TabsTrigger
-              key={month.id}
-              value={`monthtab-${month.id}`}
-              className="text-xl rounded-xl"
-              onDoubleClick={() => {
-                setEditingMonthId(month.id);
-                setEditingMonthName(month.name);
-              }}
-            >
-              {editingMonthId === month.id ? (
-                <Input
-                  value={editingMonthName}
-                  autoFocus
-                  className="h-6 text-sm px-1"
-                  onChange={(e) => setEditingMonthName(e.target.value)}
-                  onBlur={() => {
-                    if (editingMonthName.trim() && editingMonthName !== month.name) {
-                      emitMonthUpdate(month.id, { name: editingMonthName.trim() });
-                    }
-                    setEditingMonthId(null);
+    <div className="flex items-center w-full px-2 space-x-4">
+      <div className="flex-grow min-w-0 overflow-x-auto scrollbar-hide">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="space-x-2 pb-1 pt-1">
+            <div className="flex space-x-2">
+              {budget.months.map((month) => (
+                <TabsTrigger
+                  key={month.id}
+                  value={`monthtab-${month.id}`}
+                  className="text-xl rounded-xl whitespace-nowrap flex-shrink-0"
+                  onDoubleClick={() => {
+                    setEditingMonthId(month.id);
+                    setEditingMonthName(month.name);
                   }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      (e.target as HTMLInputElement).blur();
-                    } else if (e.key === "Escape") {
-                      setEditingMonthId(null);
-                    }
-                  }}
-                />
-              ) : (
-                month.name
-              )}
-            </TabsTrigger>
-          ))}
-          <Button variant="outline" onClick={() => setShowAddModal(true)}>
-            + Add Month
-          </Button>
-        </TabsList>
-      </Tabs>
-
+                >
+                  {editingMonthId === month.id ? (
+                    <Input
+                      value={editingMonthName}
+                      autoFocus
+                      className="h-6 text-sm px-1"
+                      onChange={(e) => setEditingMonthName(e.target.value)}
+                      onBlur={() => {
+                        if (editingMonthName.trim() && editingMonthName !== month.name) {
+                          emitMonthUpdate(month.id, {
+                            name: editingMonthName.trim(),
+                          });
+                        }
+                        setEditingMonthId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          (e.target as HTMLInputElement).blur();
+                        } else if (e.key === "Escape") {
+                          setEditingMonthId(null);
+                        }
+                      }}
+                    />
+                  ) : (
+                    month.name
+                  )}
+                </TabsTrigger>
+              ))}
+            </div>
+          </TabsList>
+        </Tabs>
+      </div>
+      <div className="flex-shrink-0">
+        <Button variant="outline" onClick={() => setShowAddModal(true)}>
+          + Add Month
+        </Button>
+      </div>
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent>
           <DialogHeader>

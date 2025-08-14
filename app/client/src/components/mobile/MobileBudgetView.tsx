@@ -271,13 +271,13 @@ export default function MobileBudgetView() {
           </SelectContent>
         </Select>
         <div className="flex justify-between text-center">
-          <div className="w-1/2">
+          <div className="w-1/2 px-1">
             <p className={`text-md text-black font-semibold py-1 rounded ${month.startingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
               {month.startingBalance?.toLocaleString("en-AU", { style: "currency", currency: "AUD" })}
             </p>
           </div>
-          <div className="w-1/2">
-            <p className={`text-md text-black font-semibold py-1 rounded ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
+          <div className="w-1/2 px-1">
+            <p className={`text-md text-black font-semibold py-1 px-1 rounded ${month.closingBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}>
               {month.closingBalance?.toLocaleString("en-AU", { style: "currency", currency: "AUD" })}
             </p>
           </div>

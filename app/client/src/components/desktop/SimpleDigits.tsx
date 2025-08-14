@@ -91,18 +91,18 @@ export default function SimpleDigits() {
   if (isBudgetLoading || !budget || !activeMonth) return <LoadingSpinner />;
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden max-w-screen-xl mx-auto">
+    <div className="bg-background flex h-screen w-screen flex-col overflow-hidden max-w-screen-xl mx-auto">
       <div className="h-16 shrink-0 overflow-hidden">
         <Header />
       </div>
-      <div className="h-14 shrink-0 border-b overflow-hidden">
+      <div className="shrink-0 border-b" style={{ height: "5rem" }}>
         <MonthTabs />
       </div>
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <main className="flex flex-1 min-h-0 overflow-hidden p-4">
           <div className="flex h-full w-full flex-col rounded border p-4">
-            <MonthDetail onAddTransaction={handleAddTransaction}></MonthDetail>
-            <TransactionTableView transactions={activeMonth.transactions} newTransaction={newTransaction} clearNewTransaction={() => setNewTransaction(null)}></TransactionTableView>
+            <MonthDetail onAddTransaction={handleAddTransaction} />
+            <TransactionTableView transactions={activeMonth.transactions} newTransaction={newTransaction} clearNewTransaction={() => setNewTransaction(null)} />
           </div>
         </main>
       </div>

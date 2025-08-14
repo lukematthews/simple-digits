@@ -33,7 +33,7 @@ export default function TransactionCardMobile({ transaction, onDone, isNew, onDi
 
           {transaction.paid ? <CheckSquare className="shrink-0 text-black" size={16} /> : <Square className="shrink-0 text-gray-500" size={16} />}
 
-          <span className={clsx("text-sm text-black font-semibold rounded py-0.5 px-2 shrink-0 w-1/5 text-right", balanceColor)}>
+          <span className={clsx("text-sm text-black font-semibold rounded py-0.5 px-2 shrink-0 text-right", balanceColor)}>
             {transaction?.balance?.toLocaleString("en-AU", {
               style: "currency",
               currency: "AUD",
