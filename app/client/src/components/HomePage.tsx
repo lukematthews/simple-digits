@@ -5,6 +5,7 @@ import BudgetWizard from "./budget/BudgetWizard";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import BudgetWizardMobile from "./mobile/BudgetWizardMobile";
 import { Button } from "./ui/button";
+import Header from "./desktop/Header";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ export default function HomePage() {
 
   return (
     <div className={`flex ${!isMobile ? "h-screen" : ""} flex-col overflow-y-auto max-w-screen-xl mx-auto`}>
+      <div className="h-16 shrink-0 overflow-hidden">
+        <Header />
+      </div>
       <div className="flex-1 flex items-end justify-center pb-12 mt-4">
         <h1 className="text-6xl font-serif font-bold text-center">Your Budgets</h1>
       </div>

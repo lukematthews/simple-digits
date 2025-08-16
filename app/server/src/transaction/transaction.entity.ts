@@ -3,10 +3,8 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  JoinColumn,
 } from 'typeorm';
 import { Month } from '../month/month.entity';
-import { User } from '@/user/user.entity';
 import { OwnedEntity } from '@/common/owned.entity';
 
 @Entity()

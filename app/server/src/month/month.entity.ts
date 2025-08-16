@@ -2,11 +2,9 @@ import { Account } from '@/account/account.entity';
 import { Budget } from '@/budget/budget.entity';
 import { OwnedEntity } from '@/common/owned.entity';
 import { Transaction } from '@/transaction/transaction.entity';
-import { User } from '@/user/user.entity';
 import {
   Column,
   Entity,
-  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,

@@ -59,7 +59,7 @@ export default function TransactionCard({ transaction, isNew = false, onDone, on
   };
 
   return (
-    <Card key={transaction.id} className="mx-1 px-0 py-1 mb-0 hover:bg-gray-200 hover:text-black transition-colors duration-200">
+    <Card key={transaction.id} className="mx-1 px-0 py-1 mb-0 hover:bg-gray-200 hover:text-black transition-colors duration-200 rounded-xs">
       <CardContent className="px-3 py-1">
         <div className="grid grid-cols-[1fr_130px_7rem_60px_7rem_32px] items-center gap-x-2">
           {/* Description */}
